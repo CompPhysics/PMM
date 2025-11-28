@@ -1,0 +1,753 @@
+
+\begin{quantikz}
+\lstick{\ket{j_1}} \qw & \gate{H} & \gate{R_2} & \gate{R_3} & \gate{R_4} & \qw        & \qw      & \qw        & \qw      & \qw         & \qw & \qw \\
+\lstick{\ket{j_2}} \qw & \qw      & \ctrl{-1}  & \qw        & \qw        & \gate{H} & \gate{R_2} & \gate{R_3} & \qw      & \qw         & \qw & \qw \\       
+\lstick{\ket{j_3}} \qw & \qw      & \qw        & \ctrl{-2}  & \qw        & \qw      & \ctrl{-1}  & \qw        & \gate{H} & \gate{R_2}  & \qw & \qw \\
+\lstick{\ket{j_4}} \qw & \qw      & \qw        & \qw        & \ctrl{-3}  & \qw      & \qw        & \ctrl{-2}  & \qw      & \ctrl{-1}   & \gate{H} & \qw
+\end{quantikz}
+
+    Since the \(R_1\) gate is simply the identity, it usually doesn't show
+up in code or circuit diagrams as it does nothing to any of the qubits.
+In general, we call the gate \(R_k\) for \(k=1, 2, 3, 4\) a
+\(U_1\)-gate. The \(U_1\) gates are always of the form
+
+!bt
+\begin{align}
+\begin{pmatrix}
+1 & 0 \\
+0 & e^{i \lambda}
+\end{pmatrix}
+\end{align}
+!et
+where \(\lambda\) is generally some angle \(\lambda = 2\pi/n\). For us
+the angle is of the form \(\lambda = 2\pi/2^{k-1}\), where again,
+\(k = 1, 2, 3, 4\) is the index of the gates \(R_k\). Now, in the
+Quantum Fourier Transform we will need the controlled-\(U_1\) gates,
+
+!bt
+\begin{align}
+|0\rangle \langle 0| \otimes I + |1\rangle \langle 1| \otimes U_1 =  
+\begin{pmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & e^{i \lambda}
+\end{pmatrix}. 
+\end{align}
+!et
+
+This of course operates on a two-qubit system, so modifying it for a
+four-qubit system means the matrix will be a little different. The term
+\(|0\rangle \langle 0| \otimes I\) always operates on the control qubit,
+and the term \(|1\rangle \langle 1| \otimes U_1\) always operates on the
+target qubit. As an example in a four qubit system, we might have the
+first qubit be the target qubit, and the fourth qubit the control qubit.
+In this case we would have an operator:
+
+!bt
+\begin{align}
+\left(|0\rangle \langle 0| \otimes U_1 \otimes I \otimes I\right) + \left(|1\rangle \langle 1| \otimes I \otimes I \otimes I\right)
+\end{align}
+!et
+This would apply the \(U_1\) gate to the first qubit, with the control
+gate on the fourth qubit, and the identity gates on the second and third
+qubit. The more general circuit for \(n\) qubits has layers that are
+similar.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Draw the quantum circuit that computes the quantum Fourier transform
+  on two qubits.
+\item
+  Use Python to define the following gate:
+\end{enumerate}
+
+\begin{align}
+CS = \begin{pmatrix}
+S & 0 \\
+0 & X 
+\end{pmatrix} = 
+\begin{pmatrix}
+1 & 0 & 0 & 0 \\
+0 & e^{2 \pi i/2^2} & 0 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0
+\end{pmatrix} = 
+\begin{pmatrix}
+1 & 0 & 0 & 0 \\
+0 & i & 0 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0
+\end{pmatrix}
+\end{align}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Use Python to define the four basis states \(|00\rangle\),
+  \(|01\rangle\), \(|10\rangle\), and \(|11\rangle\) as four dimensional
+  unit vectors. For example,
+\end{enumerate}
+
+\begin{align}
+|00\rangle = 
+\begin{pmatrix}
+1 \\
+0 \\
+0 \\
+0
+\end{pmatrix}
+\end{align}
+
+
+\item
+  Define the gate \(H \otimes I\) and \(I \otimes H\) in Python, where
+  \(H\) is the Hadamard gate.
+\item
+  Use the gates and basis states above to compute the quantum Fourier
+  transform on the four basis states.
+\item
+  Draw the quantum circuit that computes the quantum Fourier transform
+  on three qubits.
+
+    In general, we can write the quantum Fourier transform as a matrix
+operator,
+
+\begin{align}
+F_N = \frac{1}{\sqrt{N}}
+\begin{pmatrix}
+1 & 1 & 1 & 1 & \cdots & 1 \\
+1 & \omega & \omega^2 & \omega^3 & \cdots & \omega^{N-1} \\
+1 & \omega^2 & \omega^4 & \omega^6 & \cdots & \omega^{2(N-1)} \\
+1 & \omega^3 & \omega^6 & \omega^9 & \cdots & \omega^{3(N-1)} \\
+\vdots & \vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & \omega^{N-1} & \omega^{2(N-1)} & \omega^{3(N-1)} & \cdots & \omega^{(N-1)(N-1)}
+\end{pmatrix}
+\end{align}
+
+where \(\omega = e^{2 \pi i/N}\). As an example, we can write the two
+qubit QFT as
+
+\begin{align}
+F_4 = \frac{1}{2}
+\begin{pmatrix}
+1 & 1 & 1 & 1 \\
+1 & i & -1 & -i \\
+1 & -1 & 1 & -1 \\
+1 & -i & -1 & i
+\end{pmatrix}
+\end{align}
+
+    We can define the four basis states
+\(|00\rangle, |01\rangle, |10\rangle, |00\rangle\) and \(F_4\) in
+Python:
+
+    \subsection{The Quantum Fourier Transform in
+Qiskit}\label{the-quantum-fourier-transform-in-qiskit}
+
+    \subsubsection{Imports and Dependencies}\label{imports-and-dependencies}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{4}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{pip} \PY{n}{install} \PY{n}{qiskit}
+\end{Verbatim}
+\end{tcolorbox}
+
+    First, let's define a quantum register.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{6}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{q} \PY{o}{=} \PY{n}{QuantumRegister}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Now, we can define the quantum circuit with four qubits for the Quantum
+Fourier Transform. We include barriers between sequences of gates
+according to the target qubit for the controlled-\(U_1\) gates given by
+the four matrices
+
+\begin{align}
+R_1 = \begin{pmatrix}
+1 & 0 \\
+0 & e^{2 \pi i /2^0}
+\end{pmatrix} = 
+\begin{pmatrix}
+1 & 0 \\
+0 & 1
+\end{pmatrix}, \quad 
+R_2 = \begin{pmatrix}
+1 & 0 \\
+0 & e^{2 \pi i /2^2}
+\end{pmatrix}, \quad 
+R_3 = \begin{pmatrix}
+1 & 0 \\
+0 & e^{2 \pi i /2^3}
+\end{pmatrix}, \quad 
+R_4 = \begin{pmatrix}
+1 & 0 \\
+0 & e^{2 \pi i /2^4}
+\end{pmatrix}.
+\end{align}
+
+    So, for example, have a barrier between the first sequence of gates
+\(H, R_2, R_3, R_4\) and the second sequence of gates \(H, R_2, R_3\).
+Without the barriers, the gates sometimes print out in a different order
+(try it) which can make reading the circuit diagram printout a little
+more confusing. Again, since the \(R_1\) gate is simply the identity, it
+usually doesn't show up in code or circuit diagrams as it does nothing
+to any of the qubits.
+
+
+    Now, we can define a device (or backend) to run the circuit on, create a
+quantum program for execution, and store the result of the job we
+executed.
+
+    \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Define a QuantumRegister in QISKit with three qubits.
+\item
+  Define the Quantum Fourier Transform circuit for this three qubit
+  system and draw the output circuit. Be sure to use barriers in the
+  appropriate places. You will only need two controlled-\(U_1\) gates.
+  They correspond to the following gates,
+\end{enumerate}
+
+\begin{align}
+R_2 = \begin{pmatrix}
+1 & 0 \\
+0 & e^{2 \pi i /2^2}
+\end{pmatrix}, \quad 
+R_3 = \begin{pmatrix}
+1 & 0 \\
+0 & e^{2 \pi i /2^3}
+\end{pmatrix}
+\end{align}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Define a device (or backend) to run this circuit on using Aer, create
+  a job, store the result, and print the state vector that results from
+  running this circuit.
+\end{enumerate}
+
+    \subsection{Applications}\label{applications}
+
+    The Quantum Fourier Transform, which is essentially a discrete Fourier
+transform, has many applications. One thing to note is that quantum
+computers can implement the Quantum Fourier Transform using \(O(n^2)\)
+gates. The best classical algorithms for implementing a disctrete
+Fourier transform on \(2^n\) elements are algorithms like the
+\textbf{\href{https://en.wikipedia.org/wiki/Fast_Fourier_transform}{Fast
+Fourier Transform}}, which computes the disctrete Fourier transform on
+\(2^n\) elements in \(O(n2^n)>>O(n^2)\) logic gates, much greater than
+the \(O(n^2)\) gates for a quantum computer computing the QFT. So, we
+use exponentially more gates on a classical computer. Finding
+applications of this exponential speedup then should be considered
+highly important.
+
+    \subsubsection{Phase Estimation}\label{phase-estimation}
+
+    Phase estimation is described by Nielson and Chuang (pg. 245) as
+follows.
+
+\begin{quote}
+``Let \(|u\rangle\) be an eigenstate of some unitary operator \(U\),
+with eigenvalue \(e^{2\pi i \phi}\). Starting from the initial state
+\(|0\rangle^{\otimes t}|u\rangle\), and given the ability to efficiently
+perform \(U^{2^k}\) for some integer \(k\), this algorithm can be used
+to efficiently obtain state \(|\tilde{\phi}\rangle |u\rangle\), where
+\(\tilde{\phi}\) accurately approximates \(\phi\) to
+\(t-\lceil \log(2+\frac{1}{2\epsilon}) \rceil\) bits with probability at
+least \(1 - \epsilon\).''
+\end{quote}
+
+    The schematic for the phase estimation circuit is:
+
+    \begin{figure}
+\centering
+\includegraphics{phase_estimation_1.png}
+\caption{phase\_estimation\_1.png}
+\end{figure}
+
+    \begin{quantikz}
+\lstick{$\ket{0}^{\otimes t}$} & \gate{H^j} \qwbundle{t} & \ctrl{1} & \gate{FT^{\dagger}} & \meter{} & \\
+\lstick{$\ket{u}^{\otimes m}$} & \qw \qwbundle{m}        & \gate{U^{2^j}} & \qw       & \qw  & \qw \ket{u}
+\end{quantikz}
+
+    The gate \(FT^{\dagger}\) is the inverse Quantum Fourier Transform. The
+top wire represents \(t\)-qubits and is actually a bundle of
+\(t\)-wires, with qubits in the initial state \(|0\rangle\). The bottom
+wire is again a bundle of \(m\)-wires on \(m\)-qubits in state
+\(|u\rangle\), the eigenstate of the unitary operator \(U\) with
+eigenvalue \(e^{2 \pi i \phi}\). The operator \(H^j = H^{\otimes t}\) is
+meant to indicate a series (or tensor product) of Hadamard gates on the
+first \(j = 1, 2, ..., t\) qubits, and the controlled-\(U^j\) gate is
+meant to indicate the application of successive controlled-\(U^j\) gates
+for \(2^j = 2^0, 2^1, 2^2, ..., 2^{t-1}\). This notation might be a bit
+confusing so let's look at an example with \(t=3\) qubits on the first
+register, and the same number on the second register. The first part of
+the circuit, prior to the Quantum Fourier Transform is as follws:
+
+    \begin{figure}
+\centering
+\includegraphics{phase_est_3_qubits.png}
+\caption{phase\_est\_3\_qubits.png}
+\end{figure}
+
+    \begin{quantikz}
+\lstick{$\ket{0}$} & \gate{H} & \qw        & \qw      & \ctrl{3} & \qw \ket{0} + e^{2 \pi i (2^2 \phi)}\ket{1}\\
+\lstick{$\ket{0}$} & \gate{H} & \qw        & \ctrl{2} & \qw      & \qw \ket{0} + e^{2 \pi i (2^1 \phi)}\ket{1}\\
+\lstick{$\ket{0}$} & \gate{H} & \ctrl{1}   & \qw      & \qw      & \qw \ket{0} + e^{2 \pi i (2^0 \phi)}\ket{1} \\
+\lstick{$\ket{u}$} & \qw  \qwbundle[alternate]{} & \gate{U^{2^0}} \qwbundle[
+alternate]{} & \gate{U^{2^1}} \qwbundle[
+alternate]{} & \gate{U^{2^2}} \qwbundle[
+alternate]{} & \qwbundle[
+alternate]{} \ket{u}
+\end{quantikz}
+
+    The superposition states on the right hand side must also be multiplied
+by a normalization factor of \(1/2^{3/2}\). The next part of the circuit
+applies the \emph{inverse} Quantum Fourier Transform \(FT^{\dagger}\) to
+the first three qubits. This circuit will work for phase estimation
+using a unitary operator \(U\) that is \(2^3 \times 2^3 = 8 \times 8\).
+We can devise a somewhat simpler example for a smaller controlled \(U\)
+by choosing
+
+\begin{align}
+U_1 = 
+\begin{pmatrix}
+1 & 0 \\
+0 & e^{i \lambda}
+\end{pmatrix}
+\end{align}
+
+Let's have a look at how to construct the first part of this circuit in
+QISKit for this choice of \(U\). First, let's define a four-qubit
+quantum register, with a three-bit classical register, and apply a
+Hadamard gate to the first three qubits, followed by a barrier.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{12}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qr} \PY{o}{=} \PY{n}{QuantumRegister}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}
+\PY{n}{cr} \PY{o}{=} \PY{n}{ClassicalRegister}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc2} \PY{o}{=} \PY{n}{QuantumCircuit}\PY{p}{(}\PY{n}{qr}\PY{p}{,} \PY{n}{cr}\PY{p}{)}
+\PY{c+c1}{\PYZsh{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{barrier}\PY{p}{(}\PY{p}{)}
+\PY{c+c1}{\PYZsh{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+\prompt{Out}{outcolor}{13}{}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_53_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    Now, we need to apply the controlled-\(U_1\) gate a total of
+\(2^3-1 = 7\) times to the fourth qubit, with the control qubit going
+sequentially upward along the third, second, and first qubit. Each time
+we step up a qubit, we apply the controlled-\(U_1\) gate twice as many
+times. Let's choose a value of \(\lambda = \pi/2\).
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{14}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{qr}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{barrier}\PY{p}{(}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+\prompt{Out}{outcolor}{14}{}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_55_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    As we can see, we applied the controlled-\(U_1\) gate \(2^0 = 1\) time
+with the control qubit equal to the thrid qubit. We then applied the
+controlled-\(U_1\) gate \(2^1 = 2\) times to with the control qubit
+equal to the second qubit. Finally, we applied it \(2^2 = 4\) times with
+the control qubit equal to the first qubit. The next part of the
+algorithm is to apply the \emph{inverse} Quantum Fourier transform to
+the first three qubits. Let's build this circuit separately and then we
+can simple adjoin it to our circuit \texttt{qc2} above. First, let's
+import \texttt{math}.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{15}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{import} \PY{n+nn}{math}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Next, we define a \texttt{QuantumCircuit()} with the same four-qubit
+quantum register and three-qubit classical register as the circuit
+\texttt{qc2}.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{16}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc3} \PY{o}{=} \PY{n}{QuantumCircuit}\PY{p}{(}\PY{n}{qr}\PY{p}{,} \PY{n}{cr}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Now, we are going to define a function that performs the \emph{inverse}
+Quantum Fourier Transform for a given circuit \texttt{circ} and for the
+first n-qubits in \texttt{circ}.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{17}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{def} \PY{n+nf}{qft\PYZus{}dagger}\PY{p}{(}\PY{n}{circ}\PY{p}{,} \PY{n}{n}\PY{p}{)}\PY{p}{:}
+\PY{+w}{    }\PY{l+s+sd}{\PYZdq{}\PYZdq{}\PYZdq{}n\PYZhy{}qubit QFTdagger the first n qubits in circ\PYZdq{}\PYZdq{}\PYZdq{}}
+    \PY{c+c1}{\PYZsh{} Don\PYZsq{}t forget the Swaps!}
+    \PY{k}{for} \PY{n}{qubit} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{o}{/}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{:}
+        \PY{n}{circ}\PY{o}{.}\PY{n}{swap}\PY{p}{(}\PY{n}{qubit}\PY{p}{,} \PY{n}{n}\PY{o}{\PYZhy{}}\PY{n}{qubit}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}
+    \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{p}{)}\PY{p}{:}
+        \PY{k}{for} \PY{n}{m} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{j}\PY{p}{)}\PY{p}{:}
+            \PY{n}{circ}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{n}{math}\PY{o}{.}\PY{n}{pi}\PY{o}{/}\PY{n+nb}{float}\PY{p}{(}\PY{l+m+mi}{2}\PY{o}{*}\PY{o}{*}\PY{p}{(}\PY{n}{j}\PY{o}{\PYZhy{}}\PY{n}{m}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{n}{m}\PY{p}{,} \PY{n}{j}\PY{p}{)}
+        \PY{n}{circ}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{n}{j}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Okay, now we apply this function to our circuit \texttt{qc3} defined
+above on the first \(n=3\) qubits.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{18}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc3}\PY{o}{.}\PY{n}{barrier}\PY{p}{(}\PY{p}{)}
+\PY{c+c1}{\PYZsh{} Apply inverse QFT}
+\PY{n}{qft\PYZus{}dagger}\PY{p}{(}\PY{n}{qc3}\PY{p}{,} \PY{l+m+mi}{3}\PY{p}{)}
+\PY{c+c1}{\PYZsh{} Measure}
+\PY{n}{qc3}\PY{o}{.}\PY{n}{barrier}\PY{p}{(}\PY{p}{)}
+\PY{k}{for} \PY{n}{n} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)}\PY{p}{:}
+    \PY{n}{qc3}\PY{o}{.}\PY{n}{measure}\PY{p}{(}\PY{n}{n}\PY{p}{,}\PY{n}{n}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Now, let's draw our circuit.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{19}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc3}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+\prompt{Out}{outcolor}{19}{}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_65_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    Okay, finally let's adjoin \texttt{qc3} to the end of \texttt{qc2} and
+then draw the resulting circuit.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{20}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{circuit} \PY{o}{=} \PY{n}{qc2}\PY{o}{+}\PY{n}{qc3}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{21}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{circuit}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+\prompt{Out}{outcolor}{21}{}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_68_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    \subsubsection{Exercises}\label{exercises}
+
+Now, for our circuit \texttt{circuit} which was \texttt{qc2+qc3} we
+chose an eigenstate \(|u\rangle = |0\rangle\) for the controlled-\(U_1\)
+gate. However, we could have also chosen the eigenvector \(|1\rangle\),
+with has eigenvalue \(e^{i \lambda}\) with out choice of
+\(\lambda = \pi/2\).
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Reconstruct the circuit above for phase estimation, but for
+  \(|u\rangle = |1\rangle\). To do this, you will need to flip the
+  spin-up state \(|0\rangle\) into the spin-down state \(|1\rangle\).
+  Which gate operation will you need to apply in order to initialize the
+  fourth qubit to be in state \(|1\rangle\)?
+\item
+  Recall, for \(t\) qubits we can estimate the value \(\phi\) for the
+  eigenvalue \(e^{2 \pi i \phi}\) with accuracy
+  \(t-\lceil \log(2+\frac{1}{2\epsilon}) \rceil\). Compute the accuracy
+  we achieve with the above circuit (\(t=3\)).
+\item
+  Compute the accuracy if we have \(t=4\) qubits. For an example of the
+  accuracy improvement for different choices of \(U\) see the
+  \href{https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html}{Qiskit
+  documentation}.
+\end{enumerate}
+
+    \subsubsection{Order-Finding and
+Factoring}\label{order-finding-and-factoring}
+
+    The phase estimation algorithm can be used to solve two important
+problems, \textbf{order-finding} and \textbf{factoring}. Efficient
+implementations of these two applications can be used to break RSA
+public-key cryptography. These two applications, according to Nielson
+and Chuange (pg. 226), provide evidence that quantum computers may be
+inherently more powerful than classical computers and they give reason
+to doubt the strong Church-Turing thesis.
+
+To understand order-finding we need some basic number theory. Let \(x\)
+and \(N\) be positive integers with no common factors. We define the
+\textbf{order of \(x\) modulo \(N\)} to be the smallest positive integer
+\(r\) such that
+
+\begin{align}
+x^r = 1 (\textbf{mod} \ N).
+\end{align}
+
+    Finding the order \(r\) of two given integers \(x\) and \(N\) is
+believed to be hard. In particular, there is no known algorithm that can
+solve the problem with a polynomial amount of resources in the \(O(L)\)
+bits needed to specify the problem. Here, \(L = \lceil \log(N) \rceil\)
+is the number of bits used to specify the integer \(N\). Now, the
+quantum algorithm used to for order-finding is the phase estimation
+algorithm applied to the unitary operator
+
+\begin{align}
+U|y\rangle = |xy (\textbf{mod} \ N)\rangle, 
+\end{align}
+
+where \(y \in \{0,1\}^L\). The eigenstates of the operator \(U\) are,
+
+\begin{align}
+|u_s\rangle = \frac{1}{\sqrt{r}} \sum_{k=0}^{r-1}e^{(-2\pi i sk)/r}|x^k (\textbf{mod} \ N)\rangle. 
+\end{align}
+
+    The eigenvalues can be found via the following calculation,
+
+\begin{align}
+U|u_s\rangle &= \frac{1}{\sqrt{r}} \sum_{k=0}^{r-1}e^{(-2\pi i sk)/r}|x^{k+1} (\textbf{mod} \ N)\rangle \\
+&= e^{2 \pi is/r}|u_s\rangle.
+\end{align}
+
+Here \(0 \leq s \leq r-1\). The quantum circuit for the order-finding
+algorithm is as follows:
+
+    \begin{figure}
+\centering
+\includegraphics{order_finding_circuit.png}
+\caption{order\_finding\_circuit.png}
+\end{figure}
+
+    \begin{quantikz}
+\lstick{$\ket{0}^{\otimes t}$} & \gate{H^{\otimes t}}\qwbundle{t} & \ctrl{1}           & \gate{FT^{\dagger}} & \meter{}\\
+\lstick{$\ket{1}^{\otimes L}$} & \qw \qwbundle{L}                 & \gate{x^j (mod N)} & \qw                 & \qw 
+\end{quantikz}
+
+    This circuit can also be used for factoring. The gate \(FT^{\dagger}\)
+is the inverse Quantum Fourier Transform.
+
+    \subsection{\texorpdfstring{Creating Python Functions to Compute Phase
+Estimation, QFT, and
+QFT\(^{\dagger}\)}{Creating Python Functions to Compute Phase Estimation, QFT, and QFT\^{}\{\textbackslash dagger\}}}\label{creating-python-functions-to-compute-phase-estimation-qft-and-qftdagger}
+
+    In this section we are going to construct three functions that operate
+on quantum circuits. First, we are going to construct a Python function
+to prepare the phase estimation algorithm. Next, we'll construct a
+function that performs the Quantum Fourier Transform. Finally, we will
+build a function that performs the Inverse Quantum Fourier Transform.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{22}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{from} \PY{n+nn}{qiskit} \PY{k+kn}{import} \PY{o}{*}
+\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+\PY{k+kn}{import} \PY{n+nn}{math}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsubsection{Phase Estimation}\label{phase-estimation}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{23}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{def} \PY{n+nf}{phase\PYZus{}est}\PY{p}{(}\PY{n}{circuit}\PY{p}{,} \PY{n}{theta}\PY{p}{)}\PY{p}{:}
+    \PY{n}{n} \PY{o}{=} \PY{n+nb}{len}\PY{p}{(}\PY{n}{circuit}\PY{o}{.}\PY{n}{qubits}\PY{p}{)}
+    \PY{k}{for} \PY{n}{qubit} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{:}
+        \PY{n}{circuit}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{n}{qubit}\PY{p}{)}
+    \PY{n}{repetitions} \PY{o}{=} \PY{l+m+mi}{1}
+    \PY{k}{for} \PY{n}{counting\PYZus{}qubit} \PY{o+ow}{in} \PY{n+nb}{reversed}\PY{p}{(}\PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}\PY{p}{:}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{repetitions}\PY{p}{)}\PY{p}{:}
+            \PY{n}{circuit}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{theta}\PY{p}{,} \PY{n}{counting\PYZus{}qubit}\PY{p}{,} \PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+        \PY{n}{repetitions} \PY{o}{*}\PY{o}{=} \PY{l+m+mi}{2}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Let's test it out on a five qubit circuit.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{24}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc} \PY{o}{=} \PY{n}{QuantumCircuit}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}
+\PY{n}{phase\PYZus{}est}\PY{p}{(}\PY{n}{qc}\PY{p}{,} \PY{n}{math}\PY{o}{.}\PY{n}{pi}\PY{o}{/}\PY{l+m+mi}{4}\PY{p}{)}
+\PY{n}{qc}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+\prompt{Out}{outcolor}{24}{}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_83_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    \subsubsection{Quantum Fourier
+Transform}\label{quantum-fourier-transform}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{25}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{def} \PY{n+nf}{qft}\PY{p}{(}\PY{n}{circuit}\PY{p}{)}\PY{p}{:}
+\PY{+w}{    }\PY{l+s+sd}{\PYZdq{}\PYZdq{}\PYZdq{}n\PYZhy{}qubit Quantum Fourier Transform\PYZdq{}\PYZdq{}\PYZdq{}}
+    \PY{n}{n} \PY{o}{=} \PY{n+nb}{len}\PY{p}{(}\PY{n}{circuit}\PY{o}{.}\PY{n}{qubits}\PY{p}{)}
+    \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{:}
+        \PY{n}{circuit}\PY{o}{.}\PY{n}{barrier}\PY{p}{(}\PY{p}{)}
+        \PY{n}{circuit}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{n}{j}\PY{p}{)}
+        \PY{k}{for} \PY{n}{m} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{n}{j}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{:}
+            \PY{n}{circuit}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{n}{math}\PY{o}{.}\PY{n}{pi}\PY{o}{/}\PY{n+nb}{float}\PY{p}{(}\PY{l+m+mi}{2}\PY{o}{*}\PY{o}{*}\PY{p}{(}\PY{n}{m}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{n}{j}\PY{o}{+}\PY{n}{m}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{,} \PY{n}{j}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Let's test this function out on another five qubit circuit.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc2} \PY{o}{=} \PY{n}{QuantumCircuit}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}
+\PY{n}{qft}\PY{p}{(}\PY{n}{qc2}\PY{p}{)}
+\PY{n}{qc2}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+\prompt{Out}{outcolor}{26}{}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_87_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    \subsubsection{Inverse Quantum Fourier
+Transform}\label{inverse-quantum-fourier-transform}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{27}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{def} \PY{n+nf}{qft\PYZus{}dagger}\PY{p}{(}\PY{n}{circuit}\PY{p}{)}\PY{p}{:}
+\PY{+w}{    }\PY{l+s+sd}{\PYZdq{}\PYZdq{}\PYZdq{}n\PYZhy{}qubit QFTdagger the first n qubits in circ\PYZdq{}\PYZdq{}\PYZdq{}}
+    \PY{n}{n} \PY{o}{=} \PY{n+nb}{len}\PY{p}{(}\PY{n}{circuit}\PY{o}{.}\PY{n}{qubits}\PY{p}{)}
+    \PY{c+c1}{\PYZsh{} Don\PYZsq{}t forget the Swaps!}
+    \PY{k}{for} \PY{n}{qubit} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{o}{/}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{:}
+        \PY{n}{circuit}\PY{o}{.}\PY{n}{swap}\PY{p}{(}\PY{n}{qubit}\PY{p}{,} \PY{n}{n}\PY{o}{\PYZhy{}}\PY{n}{qubit}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{)}
+    \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{n}\PY{p}{)}\PY{p}{:}
+        \PY{k}{for} \PY{n}{m} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{j}\PY{p}{)}\PY{p}{:}
+            \PY{n}{circuit}\PY{o}{.}\PY{n}{cu1}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{n}{math}\PY{o}{.}\PY{n}{pi}\PY{o}{/}\PY{n+nb}{float}\PY{p}{(}\PY{l+m+mi}{2}\PY{o}{*}\PY{o}{*}\PY{p}{(}\PY{n}{j}\PY{o}{\PYZhy{}}\PY{n}{m}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{n}{m}\PY{p}{,} \PY{n}{j}\PY{p}{)}
+        \PY{n}{circuit}\PY{o}{.}\PY{n}{h}\PY{p}{(}\PY{n}{j}\PY{p}{)}
+        \PY{n}{circuit}\PY{o}{.}\PY{n}{barrier}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Let's test it on a five qubit circuit.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{28}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{qc3} \PY{o}{=} \PY{n}{QuantumCircuit}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}
+\PY{n}{qft\PYZus{}dagger}\PY{p}{(}\PY{n}{qc3}\PY{p}{)}
+\PY{n}{qc3}\PY{o}{.}\PY{n}{draw}\PY{p}{(}\PY{n}{output}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mpl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+ 
+            
+
+    \subsubsection{Exercises}\label{exercises}
+
+    \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Create a four qubit quantum circuit named \texttt{qc1}. Use the
+  \texttt{qft} function on \texttt{qc1}.
+\item
+  Create a four qubit quantum circuit named \texttt{qc2}. Use the
+  \texttt{qft\_dagger} function on \texttt{qc2}.
+\item
+  Create a circuit \texttt{circ1\ =\ qc1+qc2} that performs the QFT and
+  inverse QFT.
+\item
+  Run \texttt{circ1} on the \texttt{statevector\_simulator} in QISKit
+  and print the state vector. Does this state vector make sense?
+\item
+  Construct a circuit \texttt{qc3} on four qubits and apply the
+  \texttt{phase\_est} function to it.
+\item
+  Now create a second circuit \texttt{qc4} on four qubits and run the
+  inverse QFT on it.
+\item
+  Create a circuit \texttt{qc3+qc4} and print the state vector resulting
+  from running this circuit on the \texttt{statevector\_simulator}
+  backend.
+\end{enumerate}
+
+

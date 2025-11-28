@@ -1,0 +1,1579 @@
+<!--
+HTML file automatically generated from DocOnce source
+(https://github.com/doconce/doconce/)
+doconce format html week3-reveal.html week3-reveal reveal --html_slide_theme=beige
+-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="DocOnce: https://github.com/doconce/doconce/" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Quantum Computing, Quantum Machine Learning and Quantum Information Theories">
+<title>Quantum Computing, Quantum Machine Learning and Quantum Information Theories</title>
+
+<!-- reveal.js: https://lab.hakim.se/reveal-js/ -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+<link rel="stylesheet" href="reveal.js/css/reveal.css">
+<link rel="stylesheet" href="reveal.js/css/theme/beige.css" id="theme">
+<!--
+<link rel="stylesheet" href="reveal.js/css/reveal.css">
+<link rel="stylesheet" href="reveal.js/css/theme/beige.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/beigesmall.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/solarized.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/serif.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/night.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/moon.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/simple.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/sky.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/darkgray.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/default.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/cbc.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/simula.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/black.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/white.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/league.css" id="theme">
+-->
+
+<!-- For syntax highlighting -->
+<link rel="stylesheet" href="reveal.js/lib/css/zenburn.css">
+
+<!-- Printing and PDF exports -->
+<script>
+var link = document.createElement( 'link' );
+link.rel = 'stylesheet';
+link.type = 'text/css';
+link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+document.getElementsByTagName( 'head' )[0].appendChild( link );
+</script>
+
+<style type="text/css">
+hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+p.caption { width: 80%; font-size: 60%; font-style: italic; text-align: left; }
+hr.figure { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+.reveal .alert-text-small   { font-size: 80%;  }
+.reveal .alert-text-large   { font-size: 130%; }
+.reveal .alert-text-normal  { font-size: 90%;  }
+.reveal .alert {
+  padding:8px 35px 8px 14px; margin-bottom:18px;
+  text-shadow:0 1px 0 rgba(255,255,255,0.5);
+  border:5px solid #bababa;
+  -webkit-border-radius: 14px; -moz-border-radius: 14px;
+  border-radius:14px;
+  background-position: 10px 10px;
+  background-repeat: no-repeat;
+  background-size: 38px;
+  padding-left: 30px; /* 55px; if icon */
+}
+.reveal .alert-block {padding-top:14px; padding-bottom:14px}
+.reveal .alert-block > p, .alert-block > ul {margin-bottom:1em}
+/*.reveal .alert li {margin-top: 1em}*/
+.reveal .alert-block p+p {margin-top:5px}
+/*.reveal .alert-notice { background-image: url(https://hplgit.github.io/doconce/bundled/html_images/small_gray_notice.png); }
+.reveal .alert-summary  { background-image:url(https://hplgit.github.io/doconce/bundled/html_images/small_gray_summary.png); }
+.reveal .alert-warning { background-image: url(https://hplgit.github.io/doconce/bundled/html_images/small_gray_warning.png); }
+.reveal .alert-question {background-image:url(https://hplgit.github.io/doconce/bundled/html_images/small_gray_question.png); } */
+/* Override reveal.js table border */
+.reveal table td {
+  border: 0;
+}
+
+<style type="text/css">
+/* Override h1, h2, ... styles */
+h1 { font-size: 2.8em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.4em; }
+h4 { font-size: 1.3em; }
+h1, h2, h3, h4 { font-weight: bold; line-height: 1.2; }
+body { overflow: auto; } /* vertical scrolling */
+hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+p.caption { width: 80%; font-size: 60%; font-style: italic; text-align: left; }
+hr.figure { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+.slide .alert-text-small   { font-size: 80%;  }
+.slide .alert-text-large   { font-size: 130%; }
+.slide .alert-text-normal  { font-size: 90%;  }
+.slide .alert {
+  padding:8px 35px 8px 14px; margin-bottom:18px;
+  text-shadow:0 1px 0 rgba(255,255,255,0.5);
+  border:5px solid #bababa;
+    -webkit-border-radius:14px; -moz-border-radius:14px;
+  border-radius:14px
+  background-position: 10px 10px;
+  background-repeat: no-repeat;
+  background-size: 38px;
+  padding-left: 30px; /* 55px; if icon */
+}
+.slide .alert-block {padding-top:14px; padding-bottom:14px}
+.slide .alert-block > p, .alert-block > ul {margin-bottom:0}
+/*.slide .alert li {margin-top: 1em}*/
+.deck .alert-block p+p {margin-top:5px}
+/*.slide .alert-notice { background-image: url(https://hplgit.github.io/doconce/
+bundled/html_images//small_gray_notice.png); }
+.slide .alert-summary  { background-image:url(https://hplgit.github.io/doconce/
+bundled/html_images//small_gray_summary.png); }
+.slide .alert-warning { background-image: url(https://hplgit.github.io/doconce/
+bundled/html_images//small_gray_warning.png); }
+.slide .alert-question {background-image:url(https://hplgit.github.io/doconce/
+bundled/html_images/small_gray_question.png); } */
+.dotable table, .dotable th, .dotable tr, .dotable tr td {
+  border: 2px solid black;
+  border-collapse: collapse;
+  padding: 2px;
+}
+</style>
+
+
+<!-- Styles for table layout of slides -->
+<style type="text/css">
+td.padding {
+  padding-top:20px;
+  padding-bottom:20px;
+  padding-right:50px;
+  padding-left:50px;
+}
+</style>
+
+</head>
+
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: {
+     equationNumbers: {  autoNumber: "none"  },
+     extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "color.js"]
+  }
+});
+</script>
+<script type="text/javascript" async
+ src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+
+
+<section>
+<!-- ------------------- main content ---------------------- -->
+<center>
+<h1 style="text-align: center;">Quantum Computing, Quantum Machine Learning and Quantum Information Theories</h1>
+</center>  <!-- document title -->
+
+<!-- author(s): Morten Hjorth-Jensen -->
+<center>
+<b>Morten Hjorth-Jensen</b> 
+</center>
+<!-- institution -->
+<center>
+<b>Department of Physics, University of Oslo, Norway</b>
+</center>
+<br>
+<center>
+<h4>February 5, 2025</h4>
+</center> <!-- date -->
+<br>
+
+
+<center style="font-size:80%">
+<!-- copyright --> &copy; 1999-2025, Morten Hjorth-Jensen. Released under CC Attribution-NonCommercial 4.0 license
+</center>
+</section>
+
+<section>
+<h2 id="plans-for-the-week-of-february-3-7-2025">Plans for the week of February 3-7, 2025 </h2>
+<div class="alert alert-block alert-block alert-text-normal">
+<b></b>
+<p>
+<ol>
+<p><li> Quantum circuits and operations (one-, two- and three-qubit gates</li>
+<p><li> Hands-on exercises, see end of these slides</li>
+<p><li> Discussion of the first exercise of project 1</li>
+<p><li> <a href="https://youtu.be/9XrDKgTQL6I" target="_blank">Video of lecture</a>
+<!-- o <a href="https://github.com/CompPhysics/QuantumComputingMachineLearning/blob/gh-pages/doc/HandWrittenNotes/2024/NotesFebruary14.pdf" target="_blank">Whiteboard notes</a> --></li>
+</ol>
+</div>
+</section>
+
+<section>
+<h2 id="running-on-the-ibm-machines">Running on the IBM machines </h2>
+
+<p>For the projects and exercises, using for example Qiskit, we can run (as of now) on IBM's 127 qubit machine (Osaka).
+The Bell-state simulations below here perform this. To get started with the IBM machines, you need an account. Here's the recipe you need to follow:
+</p>
+<ol>
+<p><li> Go to <a href="quantum.ibm.com" target="_blank"><tt>quantum.ibm.com</tt></a> and create an account and follow the instructions.</li>
+<p><li> After you have set up your account, go to the account icon and find the token. You need this to identify your self when running jobs. See the code example below.</li>
+<p><li> Clicking on the <b>jobs</b> link you can see which machines are availbale and where your job is, whether it is a queue or whether it is pending.</li>
+</ol>
+<p>
+<p>The example at the end of this week's slides shows you how can run on IBM-Osaka, the 127 qubit machine which is presently available.
+Make sure you copy in your own token,  as that is your unique identifier.
+</p>
+</section>
+
+<section>
+<h2 id="explicit-instructions">Explicit instructions </h2>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Install qiskit and various packages</span>
+pip install -q qiskit
+pip install -q qiskit-aer
+pip install -q qiskit-ibmq-provider
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="setting-up-your-ibm-run">Setting up your IBM run </h2>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Provide your IBM Quantum Experience API token here</span>
+<span style="color: #228B22"># Paste in this from your IBM account</span>
+api_token = <span style="color: #CD5555">&#39;your_api_token&#39;</span>
+<span style="color: #228B22"># Load your IBM Quantum account</span>
+IBMQ.save_account(api_token, overwrite=<span style="color: #8B008B; font-weight: bold">True</span>)  <span style="color: #228B22"># This stores your credentials locally</span>
+IBMQ.load_account()
+<span style="color: #228B22"># Get the least busy backend</span>
+provider = IBMQ.get_provider(hub=<span style="color: #CD5555">&#39;ibm-q&#39;</span>, group =<span style="color: #CD5555">&#39;open&#39;</span>, project=<span style="color: #CD5555">&#39;main&#39;</span>)
+<span style="color: #228B22"># Run on the 127-qubit machine IBM-Osaka</span>
+backend = provider.get_backend(<span style="color: #CD5555">&#39;ibm_osaka&#39;</span>)
+<span style="color: #228B22"># Create a quantum circuit with two qubits</span>
+bell_circuit = QuantumCircuit(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">2</span>)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="quantum-gates-circuits-and-simple-algorithms">Quantum gates, circuits and simple algorithms </h2>
+
+<p>Quantum gates are physical actions that are applied to the physical
+system representing the qubits. Mathematically, they are
+complex-valued, unitary matrices which act on the complex-values
+normalized vectors that represent qubits. As the quantum analog of
+classical logic gates (such as AND and OR), there is a corresponding
+quantum gate for every classical gate; however, there are quantum
+gates that have no classical counter-part. They act on a set of qubits
+and, changing their state. That is, if \( U \) is a quantum gate and
+\( \vert q \rangle  \) is a qubit, then acting the gate \( U \) on the qubit \( \vert q \rangle  \)
+transforms the qubit as follows:
+</p>
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+\vert q \rangle \overset{U}{\to}U\vert q \rangle 
+. \tag{1}
+\end{align}
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="quantum-circuits">Quantum circuits </h2>
+
+<p>Quantum circuits are diagrammatic representations of quantum
+algorithms. The horizontal dimension corresponds to time; moving left
+to right corresponds to forward motion in time. They consist of a set
+of qubits \( \vert q_n\rangle \) which are stacked vertically on the left-hand
+side of the diagram. Lines, called quantum wires, extend horizontally
+to the right from each qubit, representing its state moving forward in
+time. Additionally, they contain a set of quantum gates that are
+applied to the quantum wires. Gates are applied chronologically, left
+to right.
+</p>
+</section>
+
+<section>
+<h2 id="single-qubit-gates">Single-Qubit Gates </h2>
+
+<p>A single-qubit gate is a physical action that is applied to one
+qubit. It can be represented by a matrix \( U \) from the group SU(2). Any
+single-qubit gate can be parameterized by three angles: \( \theta \),
+\( \phi \), and \( \lambda \) as follows
+</p>
+
+<p>&nbsp;<br>
+$$
+U(\theta,\phi,\lambda)=\begin{bmatrix}
+\cos\frac{\theta}{2} & -e^{i\lambda}\sin\frac{\theta}{2}
+\\
+e^{i\phi}\sin\frac{\theta}{2} & e^{i(\phi+\lambda)}\cos\frac{\theta}{2}
+\end{bmatrix}.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="widely-used-gates">Widely used gates </h2>
+
+<p>There are several widely used quantum gates. Perhaps the most famous are 
+the Pauli gates correspond to the Pauli matrices
+</p>
+
+<p>&nbsp;<br>
+$$
+I=\begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix},
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+X =\begin{bmatrix} 0 & 1 \\ 1 & 0\end{bmatrix},
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+Y=\begin{bmatrix}0 & -i \\i & 0\end{bmatrix},
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+Z=\begin{bmatrix} 1 & 0 \\ 0 & -1\end{bmatrix}.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="algebra-basis">Algebra basis </h2>
+
+<p>These gates form a basis for
+the algebra \( \mathfrak{su}(2) \). Exponentiating them will thus give us
+a basis for SU(2), the group within which all single-qubit gates
+live.
+</p>
+</section>
+
+<section>
+<h2 id="exponentiated-pauli-gates">Exponentiated Pauli gates </h2>
+
+<p>These exponentiated Pauli gates are called rotation gates
+\( R_{\sigma}(\theta) \) because they rotate the quantum state around the
+axis \( \sigma=X,Y,Z \) of the Bloch sphere by an angle \( \theta \). They are
+defined as
+</p>
+
+<p>&nbsp;<br>
+$$
+R_X(\theta)=e^{-i\frac{\theta}{2}X}=
+\begin{bmatrix}
+\cos\frac{\theta}{2} & -i\sin\frac{\theta}{2} \\
+-i\sin\frac{\theta}{2} & \cos\frac{\theta}{2} 
+\end{bmatrix},
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+R_Y(\theta)=e^{-i\frac{\theta}{2}Y}=
+\begin{bmatrix}
+\cos\frac{\theta}{2} & -\sin\frac{\theta}{2} \\
+\sin\frac{\theta}{2} & \cos\frac{\theta}{2} 
+\end{bmatrix},
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+R_Z(\theta)=e^{-i\frac{\theta}{2}Z}=\begin{bmatrix}
+e^{-i\theta/2} & 0 \\
+0 & e^{i\theta/2}\end{bmatrix}.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="basis-for-mathrm-su-2">Basis for \( \mathrm{SU}(2) \) </h2>
+
+<p>Because they form a basis for \( \mathrm{SU}(2) \), any single-qubit gate
+can be decomposed into three rotation gates. Indeed
+</p>
+<p>&nbsp;<br>
+$$
+R_z(\phi)R_y(\theta)R_z(\lambda)=
+\begin{bmatrix}
+e^{-i\phi/2} & 0 \\
+0 & e^{i\phi/2}
+\end{bmatrix}
+\begin{bmatrix}
+\cos\frac{\theta}{2} & -\sin\frac{\theta}{2} \\
+\sin\frac{\theta}{2} & \cos\frac{\theta}{2} 
+\end{bmatrix}
+\begin{bmatrix}
+e^{-i\lambda/2} & 0 \\
+0 & e^{i\lambda/2}
+\end{bmatrix}
+$$
+<p>&nbsp;<br>
+
+<p>which we can rewite as</p>
+<p>&nbsp;<br>
+$$
+e^{-i(\phi+\lambda)/2}
+\begin{bmatrix}
+\cos\frac{\theta}{2} & -e^{i\lambda}\sin\frac{\theta}{2}\\
+e^{i\phi}\sin\frac{\theta}{2} & e^{i(\phi+\lambda)}\cos\frac{\theta}{2}
+\end{bmatrix},
+$$
+<p>&nbsp;<br>
+
+<p>which is, up to a global phase, equal to the expression for an arbitrary single-qubit gate.</p>
+</section>
+
+<section>
+<h2 id="two-qubit-gates">Two-Qubit Gates </h2>
+
+<p>A two-qubit gate is a physical action that is applied to two
+qubits. It can be represented by a matrix \( U \) from the group
+SU(4). One important type of two-qubit gates are controlled gates,
+which work as follows: Suppose \( U \) is a single-qubit gate. A
+controlled-\( U \) gate (\( CU \)) acts on two qubits: a control qubit
+\( \vert x \rangle  \) and a target qubit \( \vert y \rangle  \). The controlled-\( U \) gate
+applies the identity \( I \) or the single-qubit gate \( U \) to the target
+qubit if the control gate is in the zero state \( \vert 0\rangle \) or the one
+state \( \vert 1\rangle \), respectively.
+</p>
+</section>
+
+<section>
+<h2 id="control-qubit">Control qubit </h2>
+<p>The control qubit is not acted
+upon. This can be represented as follows if
+</p>
+<p>&nbsp;<br>
+$$CU\vert xy\rangle=
+\vert xy\rangle \hspace{0.1cm} \mathrm{if} \hspace{0.1cm}  \vert x \rangle =\vert 0\rangle.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="in-matrix-form">In matrix form </h2>
+
+<p>It is easier to see in a matrix form.
+It can be written in matrix form by writing it as a superposition of
+the two possible cases, each written as a simple tensor product
+</p>
+
+<p>&nbsp;<br>
+$$
+CU = \vert 0\rangle\langle 0\vert\otimes I + \vert 1\rangle\langle 1 \vert \otimes U=\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & u_{00} & u_{01} \\
+0 & 0 & u_{10} & u_{11}
+\end{bmatrix}.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="cnot-gate">CNOT gate </h2>
+
+<p>One of the most fundamental controlled gates is the CNOT gate. It is
+defined as the controlled-\( X \) gate \( CX \). It can be written in matrix form as follows:
+</p>
+
+<p>&nbsp;<br>
+$$
+\mathrm{CNOT}=\mathrm{CX}=\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0
+\end{bmatrix}.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="mathrm-cx-gate">\( \mathrm{CX} \) gate </h2>
+
+<p>It changes, when operating on a two-qubit state where the first qubit is the control qubit and the second qubit is the target qubit, the states (check this)</p>
+<p>&nbsp;<br>
+$$
+\mathrm{CX}\vert 00\rangle=\vert 00\rangle,
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+\mathrm{CX}\vert 10\rangle= \vert 11\rangle,
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+\mathrm{CX}\vert 01\rangle= \vert 01\rangle,
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$
+\mathrm{CX}\vert 11\rangle= \vert 10\rangle,
+$$
+<p>&nbsp;<br>
+
+<p>which you can easily see by simply multiplying the above matrix with any of the above states.</p>
+</section>
+
+<section>
+<h2 id="swap-gate">Swap gate </h2>
+
+<p>A widely used two-qubit gate that goes beyond the simple controlled function is the SWAP gate. It swaps the states of the two qubits it acts upon</p>
+
+<p>&nbsp;<br>
+$$
+\mathrm{SWAP}\vert xy\rangle=\vert yx\rangle.
+$$
+<p>&nbsp;<br>
+
+<p>and has the following matrix form</p>
+
+<p>&nbsp;<br>
+$$
+\mathrm{SWAP}
+=\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}.
+$$
+<p>&nbsp;<br>
+</section>
+
+<section>
+<h2 id="introduction-to-qiskit-https-qiskit-org">Introduction to <a href="https://qiskit.org/" target="_blank">Qiskit</a> </h2>
+
+<p>This part is best seen using the jupyter-notebook.</p>
+
+<p>For the installation</p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">pip install qiskit
+pip install qiskit-ibm-runtime
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Documentation can be found at <a href="https://docs.quantum.ibm.com/api/qiskit " target="_blank"><tt>https://docs.quantum.ibm.com/api/qiskit </tt></a></p>
+</section>
+
+<section>
+<h2 id="simple-code">Simple code </h2>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22">#!/usr/bin/env python</span>
+<span style="color: #228B22"># coding: utf-8</span>
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">numpy</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">np</span>
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">qiskit</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">qk</span>
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">scipy.optimize</span> <span style="color: #8B008B; font-weight: bold">import</span> minimize
+
+
+<span style="color: #228B22"># # Initialize registers and circuit</span>
+
+n_qubits = <span style="color: #B452CD">1</span> <span style="color: #228B22">#Number of qubits</span>
+n_cbits = <span style="color: #B452CD">1</span> <span style="color: #228B22">#Number of classical bits (the number of qubits you want to measure at the end of the circuit)</span>
+qreg = qk.QuantumRegister(n_qubits) <span style="color: #228B22">#Create a quantum register</span>
+creg = qk.ClassicalRegister(n_cbits) <span style="color: #228B22">#Create a classical register</span>
+circuit = qk.QuantumCircuit(qreg,creg) <span style="color: #228B22">#Create your quantum circuit</span>
+
+
+circuit.draw() <span style="color: #228B22">#Draw circuit. It is empty</span>
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Thereafter we perform operations on qubit</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">circuit.x(qreg[<span style="color: #B452CD">0</span>]) <span style="color: #228B22">#Applies a Pauli X gate to the first qubit in the quantum register</span>
+circuit.draw()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>and select  a qubit to measure and encode the results to a classical bit</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22">#Measure the first qubit in the quantum register</span>
+<span style="color: #228B22">#and encode the results to the first qubit in the classical register</span>
+circuit.measure(qreg[<span style="color: #B452CD">0</span>],creg[<span style="color: #B452CD">0</span>])
+circuit.draw()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Thereafter we execute the circuit</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">backend = qk.Aer.get_backend(<span style="color: #CD5555">&#39;qasm_simulator&#39;</span>) 
+<span style="color: #228B22">#This is the device you want to use. It is an ideal simulation of a quantum device</span>
+
+
+job = backend.run(circuit,shots=<span style="color: #B452CD">1000</span>) <span style="color: #228B22">#Run the circuit 1000 times</span>
+result = job.result()
+counts = result.get_counts()
+<span style="color: #658b00">print</span>(counts)
+circuit.clear()
+circuit.draw()
+
+
+circuit.h(qreg[<span style="color: #B452CD">0</span>]) <span style="color: #228B22">#Apply a Hadamard gate to the first qubit of the quantum register</span>
+circuit.measure(qreg,creg)
+<span style="color: #658b00">print</span>(circuit.draw())
+
+
+job = backend.run(circuit,shots=<span style="color: #B452CD">1000</span>)
+result = job.result()
+counts = result.get_counts()
+<span style="color: #658b00">print</span>(counts)
+circuit.clear()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Now we create a two-qubit circuit and set up a Bell state</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">n_qubits = <span style="color: #B452CD">2</span>
+n_cbits = <span style="color: #B452CD">2</span>
+qreg = qk.QuantumRegister(n_qubits)
+creg = qk.ClassicalRegister(n_cbits)
+circuit = qk.QuantumCircuit(qreg,creg)
+circuit.draw()
+
+
+
+circuit.h(qreg[<span style="color: #B452CD">0</span>])
+circuit.cx(qreg[<span style="color: #B452CD">0</span>],qreg[<span style="color: #B452CD">1</span>]) 
+<span style="color: #228B22">#This is a controlled operation. Apply a Pauli X gate to the second qubit (qreg[1]) if the first qubit (qreg[0])</span>
+<span style="color: #228B22">#is in the |1&gt; state. Else do nothing</span>
+
+circuit.draw()
+
+circuit.measure(qreg,creg)
+circuit.draw()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">job = backend.run(circuit,shots=<span style="color: #B452CD">1000</span>)
+result = job.result()
+counts = result.get_counts()
+<span style="color: #658b00">print</span>(counts)
+circuit.clear()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>We apply a rotation to a qubit</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">theta = np.pi/<span style="color: #B452CD">3</span>
+circuit.rx(theta, qreg[<span style="color: #B452CD">0</span>]) <span style="color: #228B22">#R_x(theta) rotation on the first qubit (qreg[0])</span>
+circuit.measure(qreg,creg)
+<span style="color: #658b00">print</span>(circuit.draw())
+job = backend.run(circuit,shots=<span style="color: #B452CD">1000</span>)
+result = job.result()
+counts = result.get_counts()
+circuit.clear()
+<span style="color: #658b00">print</span>(counts)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="exercises-on-bell-states">Exercises on Bell states </h2>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">qiskit</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">qk</span>
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit</span> <span style="color: #8B008B; font-weight: bold">import</span> QuantumRegister, ClassicalRegister, QuantumCircuit
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit.visualization</span> <span style="color: #8B008B; font-weight: bold">import</span> plot_histogram
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit_aer</span> <span style="color: #8B008B; font-weight: bold">import</span> AerSimulator
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">matplotlib.pyplot</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">plt</span>
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Setting up a circuit</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">qreg_q = QuantumRegister(<span style="color: #B452CD">2</span>) <span style="color: #228B22"># 2 qubits</span>
+creg_c = ClassicalRegister(<span style="color: #B452CD">2</span>) <span style="color: #228B22"># 2 classical bits</span>
+
+qc = QuantumCircuit(qreg_q, creg_c) <span style="color: #228B22"># alternatively, circuit = QuantumCircuit(2, 2)</span>
+
+qc.h(qreg_q[<span style="color: #B452CD">0</span>]) <span style="color: #228B22"># apply the hadamard gate to the first qubit (to the right)</span>
+
+<span style="color: #228B22"># apply the CNOT gate with the first qubit being the control qubit and the second qubit being the target qubit</span>
+qc.cx(qreg_q[<span style="color: #B452CD">0</span>], qreg_q[<span style="color: #B452CD">1</span>]) 
+
+
+<span style="color: #228B22"># measure the qubits, specify which qubit you want to measure</span>
+qc.measure(qreg_q[<span style="color: #B452CD">0</span>], creg_c[<span style="color: #B452CD">0</span>])
+qc.measure(qreg_q[<span style="color: #B452CD">1</span>], creg_c[<span style="color: #B452CD">1</span>])
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Next we will use an ideal(noiseless) simulator (AerSimulator) to run
+our circuit. We will use the qasm$\_$simulator backend. This simulator
+returns a result object which contains the counts, or number of times
+each qubit was measured in the zero state and the one state. We can
+then use the plot$\_$histogram function to see the result of our circuit.
+</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Initialize a simulator</span>
+simulator = AerSimulator()
+
+job = qk.execute(qc, simulator, shots=<span style="color: #B452CD">1000</span>) <span style="color: #228B22"># shots are the number of times the circuit is executed</span>
+results = job.result().get_counts(qc) <span style="color: #228B22"># Done! check out the results!</span>
+<span style="color: #658b00">print</span>(results)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Is this what you expected? Visualise it!</p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">plot_histogram(results)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Now it's your turn to make create the other three bell states, which are</p>
+
+<p><p>&nbsp;<br>
+$$ \vert \Phi_+\rangle = \frac{|00\rangle + |11\rangle}{\sqrt{2}} $$
+<p>&nbsp;<br>
+<p>&nbsp;<br>
+$$ \vert \Phi_-\rangle = \frac{|00\rangle - |11\rangle}{\sqrt{2}} $$
+<p>&nbsp;<br>
+<p>&nbsp;<br>
+$$ \vert \Psi_+\rangle = \frac{|01\rangle + |10\rangle}{\sqrt{2}} $$
+<p>&nbsp;<br>
+<p>&nbsp;<br>
+$$ \vert \Psi_-\rangle = \frac{|01\rangle - |10\rangle}{\sqrt{2}} $$
+<p>&nbsp;<br>
+</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># SOLUTIONS</span>
+
+phi_plus = QuantumCircuit(<span style="color: #B452CD">2</span>,<span style="color: #B452CD">2</span>)
+phi_plus.h(<span style="color: #B452CD">0</span>)
+phi_plus.cx(<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>)
+phi_plus.measure([<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>],[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>])
+
+
+phi_minus = QuantumCircuit(<span style="color: #B452CD">2</span>,<span style="color: #B452CD">2</span>)
+phi_minus.h(<span style="color: #B452CD">0</span>)
+phi_minus.cx(<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>)
+phi_minus.z(<span style="color: #B452CD">0</span>) <span style="color: #228B22"># you can flip 1 in this case too, but not both obviously</span>
+phi_minus.measure([<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>],[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>])
+
+
+psi_plus = QuantumCircuit(<span style="color: #B452CD">2</span>,<span style="color: #B452CD">2</span>)
+psi_plus.h(<span style="color: #B452CD">0</span>)
+psi_plus.cx(<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>)
+psi_plus.x(<span style="color: #B452CD">0</span>) 
+psi_plus.measure([<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>],[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>])
+
+
+psi_minus = QuantumCircuit(<span style="color: #B452CD">2</span>,<span style="color: #B452CD">2</span>)
+psi_minus.h(<span style="color: #B452CD">0</span>)
+psi_minus.cx(<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>)
+psi_minus.x(<span style="color: #B452CD">0</span>)
+psi_minus.z(<span style="color: #B452CD">0</span>)
+psi_minus.measure([<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>],[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>])
+
+
+bell_states = [phi_plus, phi_minus, psi_plus, psi_minus]
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Have a look at them side by side</p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;">all_results = []
+
+fig, axes = plt.subplots(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">2</span>, figsize=(<span style="color: #B452CD">10</span>, <span style="color: #B452CD">10</span>))
+<span style="color: #8B008B; font-weight: bold">for</span> i,state <span style="color: #8B008B">in</span> <span style="color: #658b00">enumerate</span>(bell_states):
+    <span style="color: #658b00">print</span>(results)
+    job = qk.execute(state, simulator, shots=<span style="color: #B452CD">1000</span>)
+    all_results.append(job.result().get_counts(state))
+    plot_histogram(all_results[-<span style="color: #B452CD">1</span>], ax=axes[<span style="color: #658b00">int</span>(i/<span style="color: #B452CD">2</span>),i%<span style="color: #B452CD">2</span>])
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>How can you distinguish \( |\Phi_+\rangle \) and \( |\Phi_-\rangle \)? (and
+similarly \( |\Psi_+\rangle \) and \( |\Psi_-\rangle \))
+</p>
+
+<p>You can play around with the gates at <a href="https://quantum.ibm.com/composer" target="_blank"><tt>https://quantum.ibm.com/composer</tt></a>.
+We'll look at the example with \( |\Phi_+\rangle \) and \( |\Phi_-\rangle \).
+</p>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Solution: change basis</span>
+
+phi_plus = QuantumCircuit(<span style="color: #B452CD">2</span>,<span style="color: #B452CD">2</span>)
+phi_plus.h(<span style="color: #B452CD">0</span>)
+phi_plus.cx(<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>)
+phi_plus.h(<span style="color: #B452CD">0</span>)
+phi_plus.h(<span style="color: #B452CD">1</span>)
+phi_plus.measure([<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>],[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>])
+
+
+phi_minus = QuantumCircuit(<span style="color: #B452CD">2</span>,<span style="color: #B452CD">2</span>)
+phi_minus.h(<span style="color: #B452CD">0</span>)
+phi_minus.cx(<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>)
+phi_minus.z(<span style="color: #B452CD">0</span>) <span style="color: #228B22"># you can flip 1 in this case too, but not both obviously</span>
+phi_minus.h(<span style="color: #B452CD">0</span>)
+phi_minus.h(<span style="color: #B452CD">1</span>)
+phi_minus.measure([<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>],[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">1</span>])
+
+<span style="color: #8B008B; font-weight: bold">for</span> state <span style="color: #8B008B">in</span> [phi_plus, phi_minus]:
+    job = qk.execute(state, simulator, shots=<span style="color: #B452CD">1000</span>)
+    <span style="color: #658b00">print</span>(job.result().get_counts(state))
+    plot_histogram(job.result().get_counts(state))
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="testing-the-bell-states">Testing the Bell states </h2>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit</span> <span style="color: #8B008B; font-weight: bold">import</span> QuantumCircuit, transpile, assemble, IBMQ
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit.visualization</span> <span style="color: #8B008B; font-weight: bold">import</span> circuit_drawer
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">qiskit_aer</span>
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">matplotlib.pyplot</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">plt</span>
+
+<span style="color: #228B22"># Create a quantum circuit with two qubits</span>
+bell_circuit = QuantumCircuit(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">2</span>)
+
+<span style="color: #228B22"># Apply Hadamard gate to the first qubit</span>
+bell_circuit.h(<span style="color: #B452CD">0</span>)
+
+<span style="color: #228B22"># Apply a CNOT gate with the first qubit as the control and the second qubit as the target</span>
+bell_circuit.cx(<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>)
+
+<span style="color: #228B22"># Add measurements to the circuit</span>
+bell_circuit.measure([<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>], [<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>])
+
+<span style="color: #228B22"># Visualize the circuit</span>
+<span style="color: #658b00">print</span>(<span style="color: #CD5555">&quot;Quantum Circuit:&quot;</span>)
+<span style="color: #658b00">print</span>(bell_circuit)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="running-the-calculations">Running the calculations </h2>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Number of shots</span>
+num_shots = <span style="color: #B452CD">10000</span>
+
+<span style="color: #228B22"># Simulate the circuit using the Aer simulator</span>
+simulator = qiskit_aer.Aer.get_backend(<span style="color: #CD5555">&#39;qasm_simulator&#39;</span>)
+
+<span style="color: #228B22"># Transpile the circuit for the simulator</span>
+transpiled_circuit = transpile(bell_circuit, simulator)
+
+<span style="color: #228B22"># Execute the transpiled circuit on the simulator with the specified number of shots</span>
+result = simulator.run(transpiled_circuit, shots=num_shots).result()
+
+<span style="color: #228B22"># Get measurement counts</span>
+counts = result.get_counts(bell_circuit)
+
+<span style="color: #228B22"># Get and print the measurement results</span>
+counts = result.get_counts(bell_circuit)
+<span style="color: #658b00">print</span>(<span style="color: #CD5555">&quot;\nMeasurement Results:&quot;</span>)
+<span style="color: #658b00">print</span>(counts)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="then-plotting-the-histogram-over-counts">Then plotting the histogram over counts </h2>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Plot the histogram using Matplotlib</span>
+plt.bar(counts.keys(), counts.values())
+plt.title(<span style="color: #CD5555">&#39;Bell State Measurement Results&#39;</span>)
+plt.ylabel(<span style="color: #CD5555">&#39;Counts&#39;</span>)
+plt.show()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="getting-serious-quantum-simulator-with-hardware-noise-model">Getting serious, Quantum Simulator with Hardware noise model </h2>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit</span> <span style="color: #8B008B; font-weight: bold">import</span> QuantumCircuit, transpile, assemble, Aer, IBMQ
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit.visualization</span> <span style="color: #8B008B; font-weight: bold">import</span> plot_histogram
+<span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">qiskit.providers.aer.noise</span> <span style="color: #8B008B; font-weight: bold">import</span> NoiseModel
+
+<span style="color: #228B22"># you will not be able to run unless you provide your token here</span>
+api_token = <span style="color: #CD5555">&#39;your_api_token&#39;</span>
+<span style="color: #228B22"># Load your IBM Quantum account</span>
+IBMQ.save_account(api_token, overwrite=<span style="color: #8B008B; font-weight: bold">True</span>)  <span style="color: #228B22"># This stores your credentials locally</span>
+IBMQ.load_account()
+<span style="color: #228B22"># Get the least busy backend</span>
+provider = IBMQ.get_provider(hub=<span style="color: #CD5555">&#39;ibm-q&#39;</span>, group =<span style="color: #CD5555">&#39;open&#39;</span>, project=<span style="color: #CD5555">&#39;main&#39;</span>)
+<span style="color: #228B22">#backend = provider.get_backend(&#39;your_preferred_backend&#39;)</span>
+backend = provider.get_backend(<span style="color: #CD5555">&#39;ibm_osaka&#39;</span>)
+
+<span style="color: #228B22"># Get the noise model for the selected backend</span>
+noise_model = NoiseModel.from_backend(backend)
+
+<span style="color: #228B22"># Create a quantum circuit with two qubits</span>
+bell_circuit = QuantumCircuit(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">2</span>)
+
+<span style="color: #228B22"># Apply Hadamard gate to the first qubit</span>
+bell_circuit.h(<span style="color: #B452CD">0</span>)
+
+<span style="color: #228B22"># Apply a CNOT gate with the first qubit as the control and the second qubit as the target</span>
+bell_circuit.cx(<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>)
+
+<span style="color: #228B22"># Add measurements to the circuit</span>
+bell_circuit.measure([<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>], [<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>])
+
+<span style="color: #228B22"># Visualize the circuit</span>
+<span style="color: #658b00">print</span>(<span style="color: #CD5555">&quot;Quantum Circuit:&quot;</span>)
+<span style="color: #658b00">print</span>(bell_circuit)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="then-run-and-visualize-it">Then run and visualize it </h2>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Number of shots</span>
+num_shots = <span style="color: #B452CD">10000</span>
+
+<span style="color: #228B22"># Simulate the circuit using the Aer simulator with the noise model</span>
+simulator = Aer.get_backend(<span style="color: #CD5555">&#39;qasm_simulator&#39;</span>)
+noisy_transpiled_circuit = transpile(bell_circuit, simulator, optimization_level=<span style="color: #B452CD">0</span>)
+noisy_circuit = assemble(noisy_transpiled_circuit, shots=num_shots, noise_model=noise_model)
+
+<span style="color: #228B22"># Execute the noisy circuit on the simulator</span>
+result = simulator.run(noisy_circuit).result()
+
+<span style="color: #228B22"># Get and print the measurement results</span>
+counts = result.get_counts(bell_circuit)
+<span style="color: #658b00">print</span>(<span style="color: #CD5555">&quot;\nMeasurement Results:&quot;</span>)
+<span style="color: #658b00">print</span>(counts)
+<span style="color: #228B22"># Plot the histogram using Matplotlib</span>
+plot_histogram(counts, title=<span style="color: #CD5555">&#39;Bell State Measurement Results&#39;</span>)
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 id="and-without-the-noise-model">And without the noise model </h2>
+
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="cell border-box-sizing code_cell rendered">
+  <div class="input">
+    <div class="inner_cell">
+      <div class="input_area">
+        <div class="highlight" style="background: #eeeedd">
+  <pre style="font-size: 80%; line-height: 125%;"><span style="color: #228B22"># Provide your IBM Quantum Experience API token here</span>
+api_token = <span style="color: #CD5555">&#39;your_api_token&#39;</span>
+<span style="color: #228B22"># Load your IBM Quantum account</span>
+IBMQ.save_account(api_token, overwrite=<span style="color: #8B008B; font-weight: bold">True</span>)  <span style="color: #228B22"># This stores your credentials locally</span>
+IBMQ.load_account()
+
+<span style="color: #228B22"># Get the least busy backend</span>
+<span style="color: #228B22">#provider = IBMQ.get_provider(hub=&#39;your_hub&#39;, group=&#39;your_group&#39;, project=&#39;your_project&#39;)</span>
+provider = IBMQ.get_provider(hub=<span style="color: #CD5555">&#39;ibm-q&#39;</span>, group =<span style="color: #CD5555">&#39;open&#39;</span>, project=<span style="color: #CD5555">&#39;main&#39;</span>)
+<span style="color: #228B22">#backend = provider.get_backend(&#39;your_preferred_backend&#39;)</span>
+backend = provider.get_backend(<span style="color: #CD5555">&#39;ibm_osaka&#39;</span>)
+
+<span style="color: #228B22"># Create a quantum circuit with two qubits</span>
+bell_circuit = QuantumCircuit(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">2</span>)
+
+<span style="color: #228B22"># Apply Hadamard gate to the first qubit</span>
+bell_circuit.h(<span style="color: #B452CD">0</span>)
+
+<span style="color: #228B22"># Apply a CNOT gate with the first qubit as the control and the second qubit as the target</span>
+bell_circuit.cx(<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>)
+
+<span style="color: #228B22"># Add measurements to the circuit</span>
+bell_circuit.measure([<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>], [<span style="color: #B452CD">0</span>, <span style="color: #B452CD">1</span>])
+
+<span style="color: #228B22"># Transpile the circuit for the chosen backend</span>
+transpiled_circuit = transpile(bell_circuit, backend)
+
+<span style="color: #228B22"># Execute the transpiled circuit on the IBM Quantum computer</span>
+qobj = assemble(transpiled_circuit, shots=<span style="color: #B452CD">1024</span>)  <span style="color: #228B22"># You can adjust the number of shots</span>
+result = backend.run(qobj).result()
+
+<span style="color: #228B22"># Get measurement counts</span>
+counts = result.get_counts(bell_circuit)
+<span style="color: #658b00">print</span>(<span style="color: #CD5555">&quot;\nMeasurement Results:&quot;</span>)
+<span style="color: #658b00">print</span>(counts)
+
+<span style="color: #228B22"># Plot the histogram using Matplotlib</span>
+plt.bar(counts.keys(), counts.values())
+plt.title(<span style="color: #CD5555">&#39;Bell State Measurement Results&#39;</span>)
+plt.ylabel(<span style="color: #CD5555">&#39;Counts&#39;</span>)
+plt.show()
+</pre>
+</div>
+      </div>
+    </div>
+  </div>
+  <div class="output_wrapper">
+    <div class="output">
+      <div class="output_area">
+        <div class="output_subarea output_stream output_stdout output_text">          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+
+
+</div> <!-- class="slides" -->
+</div> <!-- class="reveal" -->
+
+<script src="reveal.js/lib/js/head.min.js"></script>
+<script src="reveal.js/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+  // Display navigation controls in the bottom right corner
+  controls: true,
+
+  // Display progress bar (below the horiz. slider)
+  progress: true,
+
+  // Display the page number of the current slide
+  slideNumber: true,
+
+  // Push each slide change to the browser history
+  history: false,
+
+  // Enable keyboard shortcuts for navigation
+  keyboard: true,
+
+  // Enable the slide overview mode
+  overview: true,
+
+  // Vertical centering of slides
+  //center: true,
+  center: false,
+
+  // Enables touch navigation on devices with touch input
+  touch: true,
+
+  // Loop the presentation
+  loop: false,
+
+  // Change the presentation direction to be RTL
+  rtl: false,
+
+  // Turns fragments on and off globally
+  fragments: true,
+
+  // Flags if the presentation is running in an embedded mode,
+  // i.e. contained within a limited portion of the screen
+  embedded: false,
+
+  // Number of milliseconds between automatically proceeding to the
+  // next slide, disabled when set to 0, this value can be overwritten
+  // by using a data-autoslide attribute on your slides
+  autoSlide: 0,
+
+  // Stop auto-sliding after user input
+  autoSlideStoppable: true,
+
+  // Enable slide navigation via mouse wheel
+  mouseWheel: false,
+
+  // Hides the address bar on mobile devices
+  hideAddressBar: true,
+
+  // Opens links in an iframe preview overlay
+  previewLinks: false,
+
+  // Transition style
+  transition: 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+  // Transition speed
+  transitionSpeed: 'default', // default/fast/slow
+
+  // Transition style for full page slide backgrounds
+  backgroundTransition: 'default', // default/none/slide/concave/convex/zoom
+
+  // Number of slides away from the current that are visible
+  viewDistance: 3,
+
+  // Parallax background image
+    //parallaxBackgroundImage: '', // e.g. "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'"
+
+  // Parallax background size
+  //parallaxBackgroundSize: '' // CSS syntax, e.g. "2100px 900px"
+
+  theme: Reveal.getQueryHash().theme, // available themes are in reveal.js/css/theme
+    transition: Reveal.getQueryHash().transition || 'none', // default/cube/page/concave/zoom/linear/none
+
+});
+
+Reveal.initialize({
+  dependencies: [
+      // Cross-browser shim that fully implements classList - https://github.com/eligrey/classList.js/
+      { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+
+      // Interpret Markdown in <section> elements
+      { src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+
+      // Syntax highlight for <code> elements
+      { src: 'reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+
+      // Zoom in and out with Alt+click
+      { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+
+      // Speaker notes
+      { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+
+      // Remote control your reveal.js presentation using a touch device
+      //{ src: 'reveal.js/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } },
+
+      // MathJax
+      //{ src: 'reveal.js/plugin/math/math.js', async: true }
+  ]
+});
+
+Reveal.initialize({
+
+  // The "normal" size of the presentation, aspect ratio will be preserved
+  // when the presentation is scaled to fit different resolutions. Can be
+  // specified using percentage units.
+  width: 1170,  // original: 960,
+  height: 700,
+
+  // Factor of the display size that should remain empty around the content
+  margin: 0.1,
+
+  // Bounds for smallest/largest possible scale to apply to content
+  minScale: 0.2,
+  maxScale: 1.0
+
+});
+</script>
+
+<!-- begin footer logo
+<div style="position: absolute; bottom: 0px; left: 0; margin-left: 0px">
+<img src="somelogo.png">
+</div>
+   end footer logo -->
+
+
+
+
+</body>
+</html>
