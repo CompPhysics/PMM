@@ -1,0 +1,153 @@
+\documentclass[twocolumn,superscriptaddress,unsortedaddress,nofootinbib,amsmath,amssymb,
+aps,floatfix]{revtex4-2}
+\usepackage{graphicx,tikz} 
+\usepackage[mode=buildmissing]{standalone} 
+\usepackage{dcolumn}
+\usepackage{bm}
+\usepackage{physics}
+\usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage{soul}
+\usepackage{comment}
+\usepackage[bb=boondox]{mathalfa}
+\usetikzlibrary{external}
+\tikzexternalize[prefix=figures/]
+\DeclareMathOperator{\sinc}{sinc}
+\newcommand{\may}[1]{\textcolor{orange}{#1}}
+\begin{document}
+\title{Lipkin model, Entanglement, Noise, Dephasing and dissipation}
+
+\author{Juan David Álvarez-Cuartas}
+\affiliation{Departament of Physics and Centre for Bioinformatics and Photonics---CIBioFi, 
+Universidad del Valle, Cali 760032, Colombia}
+\affiliation{Department of Physics and Center for Computing in Science Education, University of Oslo, N-0316 Oslo, Norway}
+\author{Patrick Cook and Danny Jammooa}
+\affiliation{Facility for Rare Isotope Beams and Department of Physics and Astronomy, Michigan State University, East Lansing, Michigan 48824, USA}
+\author{Morten Hjorth-Jensen}
+\affiliation{Department of Physics and Center for Computing in Science Education, University of Oslo, N-0316 Oslo, Norway}
+\author{Dean Lee}
+\affiliation{Facility for Rare Isotope Beams and Department of Physics and Astronomy, Michigan State University, East Lansing, Michigan 48824, USA}
+\author{Juan M.~Scarpetta, John H.~Reina}
+\affiliation{Departament of Physics and Centre for Bioinformatics and Photonics---CIBioFi, 
+Universidad del Valle, Cali 760032, Colombia}
+\affiliation{Department of Physics and Center for Computing in Science Education, University of Oslo, N-0316 Oslo, Norway}
+\begin{abstract}
+Text to come here
+\end{abstract}
+
+%\pacs{02.70.Ss, 31.15.A-, 31.15.bw, 71.15.-m, 73.21.La}
+
+
+\date{\today}
+
+\maketitle
+
+\section{Introduction} 
+Structure of article
+\begin{enumerate}
+    \item Introduction with motivation
+    \item Discussion of the Lipkin model
+    \item Setting up time evolution
+    \item PMMs and time evolution
+    \item 
+\end{enumerate}
+
+\section{Mathematical Framework and Entanglement Measures}
+
+\subsection{Hamiltonian and Symmetry.}
+The Lipkin--Meshkov--Glick (LMG) model describes $N$ spin-$\tfrac{1}{2}$ particles interacting through collective spin operators.  
+Its Hamiltonian can be expressed as
+\begin{equation}
+  \hat{H}_{\mathrm{LMG}} = -\frac{\lambda}{N} \left( \hat{S}_x^2 + \gamma\, \hat{S}_y^2 \right)
+  - h\, \hat{S}_z,
+  \label{eq:lmg-hamiltonian}
+\end{equation}
+where $\hat{S}_\alpha = \tfrac{1}{2}\sum_{i=1}^N \hat{\sigma}_i^\alpha$ are collective spin operators,
+$\lambda$ is the interaction strength, $\gamma$ the anisotropy parameter, and $h$ an external magnetic field.
+The factor $1/N$ ensures a well-defined thermodynamic limit.
+The total spin $\hat{\mathbf{S}}^2$ commutes with the Hamiltonian, implying conservation of total spin $S = N/2$,
+and the system therefore lives in the symmetric subspace spanned by the Dicke states
+\begin{equation}
+  \ket{S, M} \equiv \ket{N/2, M}, \quad M = -S, \ldots, S.
+\end{equation}
+
+\subsection{Mean-Field and Quantum Phase Transition.}
+In the thermodynamic limit ($N \to \infty$), a mean-field treatment becomes exact.
+A semiclassical energy functional can be written in terms of collective spin variables
+$(\theta, \phi)$ on the Bloch sphere as
+\begin{equation}
+  E(\theta, \phi) = -\frac{\lambda}{2}\sin^2\theta \left( \cos^2\phi + \gamma\, \sin^2\phi \right)
+  - h\, \cos\theta.
+\end{equation}
+The ground state undergoes a second-order quantum phase transition at $h_c = \lambda(1+\gamma)/2$,
+separating a symmetric phase ($\langle S_x \rangle = 0$) from a symmetry-broken phase ($\langle S_x \rangle \neq 0$).
+Near this critical point, the entanglement entropy exhibits logarithmic scaling with system size, signalling a diverging correlation length in the collective degrees of freedom.
+
+\subsection{Reduced Density Matrices and Entropy.}
+Because of full permutation symmetry, the reduced density matrix of any single spin
+is identical and can be obtained from the collective spin density operator $\rho$ as
+\begin{equation}
+  \rho_1 = \mathrm{Tr}_{2,\ldots,N}(\rho)
+  = \frac{1}{2}\left( \mathbb{I} + \frac{2}{N}\langle \hat{\mathbf{S}} \rangle \cdot \boldsymbol{\sigma} \right).
+\end{equation}
+The single-spin entanglement (or \emph{one-tangle}) with the remainder of the system is quantified by the linear entropy
+\begin{equation}
+  \tau_1 = 4 \det(\rho_1) = 1 - \frac{4}{N^2} \langle \hat{\mathbf{S}} \rangle^2.
+\end{equation}
+This quantity vanishes in product states and reaches unity for maximally mixed single-spin states.
+
+For bipartite entanglement between two subsystems of sizes $L$ and $N-L$, the von Neumann entropy
+\begin{equation}
+  S_L = - \mathrm{Tr}\, (\rho_L \log_2 \rho_L)
+\end{equation}
+is the standard measure.  In the symmetric Dicke basis, $\rho_L$ is block-diagonal and
+its eigenvalues can be expressed analytically in terms of Clebsch--Gordan coefficients,
+allowing explicit evaluation of $S_L$ for moderate $N$.
+
+\subsection{Two-Spin Correlations and Concurrence.}
+Pairwise entanglement between two spins is characterized by the \emph{concurrence} $C$,
+defined from the two-spin reduced density matrix $\rho_{12}$ as
+\begin{equation}
+  C = \max \left\{ 0, \lambda_1 - \lambda_2 - \lambda_3 - \lambda_4 \right\},
+\end{equation}
+where $\lambda_i$ are the square roots of the eigenvalues (in descending order)
+of the matrix $\rho_{12} \tilde{\rho}_{12}$, with
+$\tilde{\rho}_{12} = (\sigma_y \otimes \sigma_y)\, \rho_{12}^*\, (\sigma_y \otimes \sigma_y)$.
+In the LMG model, due to full permutation symmetry, $C$ is identical for all spin pairs.
+It reaches a maximum near the critical point and decays as $N^{-1/3}$ at criticality,
+indicating that bipartite entanglement is sub-extensive even though the total
+multipartite entanglement diverges.
+
+\subsection{Multipartite and Mixed-State Measures.}
+Beyond bipartite partitions, the \emph{global entanglement} and the
+\emph{geometric measure of entanglement} are often used:
+\begin{equation}
+  E_{\mathrm{G}} = 1 - \max_{\ket{\phi_{\mathrm{sep}}}} |\langle \phi_{\mathrm{sep}} | \psi_0 \rangle|^2,
+\end{equation}
+where $\ket{\phi_{\mathrm{sep}}}$ is the closest separable state to the ground state $\ket{\psi_0}$.
+For mixed or non-complementary partitions, the logarithmic negativity
+\begin{equation}
+  \mathcal{N} = \log_2 \| \rho^{T_A} \|_1
+\end{equation}
+quantifies entanglement by means of the trace norm of the partially transposed density matrix $\rho^{T_A}$.
+
+\subsection{Scaling and Universality.}
+Near the quantum critical point, different entanglement measures show universal scaling with system size $N$:
+\begin{equation}
+  S_L \sim \frac{1}{6} \log_2 N + \mathrm{const}, \qquad
+  \tau_1 \sim N^{-2/3}, \qquad
+  C \sim N^{-1/3}.
+\end{equation}
+These exponents coincide with those predicted by conformal field theory
+for one-dimensional critical systems, even though the LMG model is infinite-range.
+Such universality underscores that entanglement, rather than spatial locality,
+captures the essential signatures of quantum criticality.
+
+\section{Results and discussions}
+
+
+\section{Conclusion}
+
+%\bibliography{paper}
+\end{document}
+
