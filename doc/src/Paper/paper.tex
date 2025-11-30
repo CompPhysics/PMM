@@ -73,72 +73,7 @@ and the system therefore lives in the symmetric subspace spanned by the Dicke st
 \end{equation}
 
 
-%\documentclass[tikz,border=6pt]{standalone}
 
-%\begin{figure}
-\begin{tikzpicture}[font=\small, every node/.style={inner sep=1pt}]
-  % Levels
-  \coordinate (Lleft) at (0,0);
-  \coordinate (Rright) at (8,0);
-  \draw[thick] (0,2) -- (6,2) node[right]{\(\text{upper level}\,(\,+\tfrac{\varepsilon}{2}\,)\)};
-  \draw[thick] (0,0) -- (6,0) node[right]{\(\text{lower level}\,(\,-\tfrac{\varepsilon}{2}\,)\)};
-
-  % Particles in lower level: four filled circles
-  \foreach \i in {0,1,2,3}{
-    \node[circle,fill=black,minimum size=6pt,inner sep=0pt] (p\i) at (0.8+ \i*1.0 , -0.0) {};
-  }
-  % Label occupancy
-  \node[anchor=west] at (6.2,0) {initial: \(n_\text{up}=0,\; n_\text{low}=4\)};
-  
-  % Pair-scattering arrows: two-particle excitation to upper level
-  \draw[->, >=Latex, thick, blue] ($(p0)+(0,0.15)$) .. controls (1.2,0.9) and (2.0,1.6) .. ($(p0)+(1.2,2)$)
-     node[midway, sloped, above]{\(\tfrac{V}{2}\) pair flip};
-  \draw[->, >=Latex, thick, blue] ($(p1)+(0,0.15)$) .. controls (1.6,0.9) and (2.8,1.6) .. ($(p1)+(2.6,2)$);
-  
-  % Draw two particles in upper level as a possible excited configuration
-  \node[circle,fill=black,minimum size=6pt,inner sep=0pt] (u0) at (3.2,2.0) {};
-  \node[circle,fill=black,minimum size=6pt,inner sep=0pt] (u1) at (4.2,2.0) {};
-  \node[anchor=west] at (6.2,2) {excited: \(n_\text{up}=2,\; n_\text{low}=2\)};
-  
-  % Curved double arrow indicating pair scattering V <-> (both directions)
-  \draw[<->, >=Latex, very thick, red] (3.6,2.2) .. controls (4.8,1.0) and (4.8,-0.5) .. (3.6,-0.2)
-     node[midway, right, xshift=4pt] {\(\)};
-
-  % Label the scattering more explicitly
-  \node[red,right=2pt of $(3.6,0.6)$] {\(\displaystyle V\;:\; J_+^2+J_-^2\)};
-  
-  % Pseudo-spin mapping box
-  \begin{scope}[shift={(0,-2.5)}]
-    \node[draw,rounded corners, inner sep=6pt] (spinbox) at (3,0) {
-      \begin{minipage}{7.5cm}
-        \centering
-        {\bf Pseudo-spin representation (collective)}\\[4pt]
-        \(
-          J_z=\tfrac{1}{2}\,(n_\text{up}-n_\text{low}),\qquad j=\tfrac{N}{2}=2
-        \)\\[4pt]
-        Basis: \(|j,m\rangle\) with \(m=-2,-1,0,1,2\) (e.g. \(|2,-2\rangle\) = all particles in lower level)
-      \end{minipage}
-    };
-  \end{scope}
-
-  % Hamiltonian near the diagram
-  \node[anchor=west] at (6.6, -1.5) {
-    \begin{minipage}{4.0cm}
-      \[
-        H = \varepsilon J_z + \frac{V}{2}\left(J_+^2 + J_-^2\right)
-      \]
-      \vspace{4pt}
-      Notes: pairwise scattering moves two particles simultaneously between levels.
-    \end{minipage}
-  };
-
-  % Decorative: arrows linking the spinbox to levels
-  \draw[->, dashed] (spinbox.north) .. controls (3.0,0.3) .. (2.2,0.8) node[midway, left] {collective map};
-
-  % Title
-  \node[above left=0.5cm and -0.2cm of current bounding box.north east, anchor=north east, font=\bfseries\large] (title) {Lipkin model — $N=4$ (schematic)};
-\end{tikzpicture}
-%\end{figure}
 
 
 \subsection{Mean-Field and Quantum Phase Transition.}
