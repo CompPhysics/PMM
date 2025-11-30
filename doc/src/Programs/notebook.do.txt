@@ -18,14 +18,366 @@ o Add notes about entanglement measures
 ===== Code example where we use the Lipkin model and PMMs =====
 
 !bc pycod
-import math
 import numpy as np
+import jax
+import jax.numpy as jnp
+from jax import grad, jit, lax,vmap
+from jax import config
+config.update("jax_enable_x64", True)
+config.update("jax_platform_name","cpu")
+
+"""
+Eigenvalue PMM
+implements PMM using jax, and only GD not SGD/Batch
+"""
+
+class model(object):
+    def __init__(self,
+                 n,
+                 X_train,
+                 y_train,
+                 k,
+                 l,
+                 type=True,
+                 X_val=None,
+                 y_val=None,
+                 param=None,
+                 epochs = np.inf,
+                 learning_rate =0.01,
+                 print_every = 100,
+                 verbose: bool = True):
+
+        """
+        Initializes the Parameterized Matrix Model (PMM).
+
+        Parameters:
+            n (int): The size of the PMM matrix (n x n).
+            X_train (jnp.array): Training input features (X data).
+            y_train (jnp.array): Training target values (y data, typically k eigenvalues).
+            k (int): The number of eigenvalues (initial states) to be predicted.
+            l (int): The number of observable matrices (M_1, ..., M_l) in the PMM, where M = M_0 + sum(x_i * M_i).
+            type (bool, optional): If True, uses complex parameters (jnp.complex128). If False, uses real parameters (jnp.float64). Defaults to True.
+            X_val (jnp.array, optional): Validation input features. Defaults to None.
+            y_val (jnp.array, optional): Validation target values. Defaults to None.
+            param (jnp.array, optional): Saved initial parameters (theta) to use instead of generating new ones. Defaults to None.
+            epochs (int, optional): The maximum number of iterations for gradient descent (GD). Defaults to infinity (np.inf).
+            learning_rate (float, optional): The learning rate for the ADAM optimizer. Defaults to 0.01.
+            print_every (int, optional): Number of GD iterations before printing the loss. Defaults to 100.
+            verbose (bool, optional): Enable or disable printing the loss function during training. Defaults to True.
+        """
+
+        self.n = n #size of PMM
+        self.y_train = y_train # y train set
+        self.X_train = X_train #x train set
+        self.k = k #number of eigenvalues
+        self.l= l #number of M matrices
+        self.y_val = y_val #y validation set
+        self.X_val = X_val #x validatoin set
+        self.params = param #to used saved parameters
+        self.epochs = epochs #number of iteration for gd
+        self.learning_rate = learning_rate #learning rate
+        self.print_every = print_every #how many iterations of gd before pringing loss
+        self.verbose = verbose #enable for printing loss function
+        self.type = type #complex or real
+        if self.type == True:
+            self.dtype = jnp.complex128
+        elif self.type == False:
+            self.dtype = jnp.float64
+
+    ####################################
+    # 1. GETTING THE PARAMETERS
+    ####################################
+    def get_param(self):
+      """
+      Generates initial random parameters (theta) for the PMM.
+
+      The total number of parameters is (l + 1) * n * n, corresponding to
+      the l+1 matrices: M_0 and the l observable matrices M_1 to M_l.
+
+      Returns:
+          jnp.array: A flat array of randomly initialized parameters (theta).
+                      Complex if self.type is True, real otherwise.
+      """
+      num_params =  (self.l+1)*self.n*self.n
+      # Generate random parameters
+      if self.type == True:
+          theta = 0.01*(np.random.randn(num_params) + 1j*np.random.randn(num_params))
+      elif self.type == False:
+          theta = 0.01*(np.random.randn(num_params))
+      return theta
+
+    ####################################
+    # 2. SPLITTING THE PARAMETERS
+    ####################################
+    def split_params(self, theta):
+      """
+      Reshapes the flat parameter array (theta) into the PMM matrices O_0, O_1, ..., O_l.
+      It also enforces Hermitian symmetry for the matrices O_i by averaging with their conjugate transpose.
+
+      Parameters:
+          theta (jnp.array): A flat array of parameters.
+
+      Returns:
+          jnp.array: A 3D array of dimension (l+1, n, n) containing the Hermitian PMM matrices.
+                     The first slice O[0] corresponds to M_0, and O[1:] corresponds to M_1 to M_l.
+      """
+      theta = jnp.asarray(theta)
+      # O is split into O_0 (1st matrix) and O_1...O_l (l matrices)
+      # O = [M_0, M_1, ..., M_l] (l+1 matrices in total)
+      O = jnp.reshape(theta,(self.l+1,self.n,self.n))
+      O = (O + O.conj().transpose(0,2,1))/2
+      return O
+
+
+    ####################################
+    # 3. PMM Model
+    ####################################
+    def update(self, theta, X_data):
+      """
+      Calculates the predicted eigenvalues (y_pred) for a given set of parameters (theta)
+      and input features (X_data).
+
+      The PMM matrix M is constructed as: $M = M_0 + \sum_{i=1}^l x_i M_i$.
+      The output is the first k eigenvalues of the constructed matrix M.
+
+      Parameters:
+          theta (jnp.array): A flat array of model parameters.
+          X_data (jnp.array): Input features, where each row $x$ corresponds to a data point.
+
+      Returns:
+          jnp.array: The predicted values (first k eigenvalues) for each data point in X_data.
+      """
+      O = self.split_params(theta)
+      def pmm_ev(x,theta,O):
+        #M = M_0 + \sum_i^N x_i M_i
+        # The einsum operation performs M = O[0] + sum(x_i * O_i)
+        # Note: The indexing in einsum suggests O[1:] are M_i and O[0] is M_0,
+        M = O[0] + jnp.einsum('i,ijk->jk',x,O[1:])
+        E = jnp.linalg.eigvalsh(M)
+        return E[:self.k]
+      # Vectorize the PMM evaluation across all data points in X_data
+      y_pred = vmap(pmm_ev,in_axes=(0,None,None))(X_data,theta,O)
+      return y_pred
+
+
+    def Cost(self,y_true,y_pred):
+      """
+      Calculates the mean squared error (MSE) between true and predicted values.
+
+      Cost = mean(|y_true - y_pred|^2)
+
+      Parameters:
+          y_true (jnp.array): The true target values.
+          y_pred (jnp.array): The predicted values.
+
+      Returns:
+          float: The real-valued mean squared loss.
+      """
+      cost = jnp.mean((abs(y_true - y_pred)**2))
+      return cost.real
+
+
+    def Loss(self,theta,X_data,y_true):
+      """
+      Calculates the full loss function: first computes predictions, then the cost.
+
+      Parameters:
+          theta (jnp.array): Model parameters.
+          X_data (jnp.array): Input features.
+          y_true (jnp.array): True target values.
+
+      Returns:
+          float: The real-valued loss (Cost) for the given parameters and data.
+      """
+      y_pred = self.update(theta,X_data)
+      return self.Cost(y_true,y_pred)
+
+
+    def dLossdx(self,theta,X_data,y_true):
+      """
+      Computes the gradient of the Loss function with respect to the parameters (theta)
+      using JAX's automatic differentiation.
+
+      Parameters:
+          theta (jnp.array): Model parameters.
+          X_data (jnp.array): Input features.
+          y_true (jnp.array): True target values.
+
+      Returns:
+          jnp.array: The gradient of the loss function with respect to theta.
+      """
+      return grad(self.Loss)(theta,X_data,y_true)
+
+    def ADAM(self,g,i,m,v):
+      """
+      Performs one step of the ADAM (Adaptive Moment Estimation) optimization algorithm.
+
+      Parameters:
+          g (jnp.array): The current gradient of the loss function.
+          i (int): The current iteration number (0-indexed).
+          m (jnp.array): The previous biased first moment vector (m_{t-1}).
+          v (jnp.array): The previous biased second raw moment vector (v_{t-1}).
+
+      Returns:
+          tuple: (delta_theta, m_new, v_new) where:
+                  - delta_theta (jnp.array): The parameter update direction.
+                  - m_new (jnp.array): The updated first moment vector (m_t).
+                  - v_new (jnp.array): The updated second moment vector (v_t).
+      """
+      b1=0.9
+      b2=0.999
+      eps=1e-8
+      # update biased first moment estimate
+      m_new = b1 * m + (1 - b1) * g
+      # update biased second raw moment estimate
+      v_new = b2 * v + (1 - b2) * (g*g.conj())
+      # compute bias-corrected first moment estimate
+      mhat = m_new / (1 - b1 ** (i + 1))
+      # compute bias-corrected second raw moment estimate
+      vhat = v_new / (1 - b2 ** (i + 1))
+      delta_theta = mhat / (jnp.sqrt(vhat) + eps)
+      return delta_theta, m_new, v_new
+
+
+    def train(self):
+      """
+      Executes the training process using gradient descent with the ADAM optimizer.
+
+      The model iterates through a specified number of epochs, computes the gradient
+      of the loss, updates parameters using ADAM, and monitors the loss. It saves
+      the parameters that result in the best validation loss (if X_val is provided)
+      or the best training loss otherwise.
+
+      Returns:
+          jnp.array: The best set of parameters (theta) found during training.
+      """
+      theta = jnp.array(self.get_param() if self.params is None else self.params,dtype=self.dtype)
+
+      self.best_param = None
+      best_loss = np.inf
+      best_val_loss = np.inf
+
+      X_train = self.X_train
+      y_train = self.y_train
+      X_val = self.X_val
+      y_val = self.y_val
+
+      # JAX Optimization: jit compiles the core mathematical operations (gradient,
+      # loss, PMM matrix construction, and eigenvalue computation) into a single,
+      # optimized XLA kernel for maximum speed.
+      # (dLossdx -> Loss -> update -> split_params) that uses JAX arrays.
+      jgrad = jit(lambda theta,X_train,y_train: self.dLossdx(theta,X_train,y_train))
+      jLoss = jit(lambda theta,X_train,y_train: self.Loss(theta,X_train,y_train))
+      jADAM = jit(lambda g_in, i_in, m_in, v_in: self.ADAM(g_in, i_in, m_in, v_in))
+
+      #ADAM parameters
+      m = np.zeros(theta.shape, dtype=theta.dtype)
+      v = np.zeros(theta.shape, dtype=theta.dtype)
+      i = 0
+      num_samples = X_train.shape[0]
+      while i < self.epochs:
+          #calculate gradient
+          g = jgrad(theta,X_train,y_train)
+          delta_theta, m, v = jADAM(g.conj(),i,m,v)
+          theta = theta - self.learning_rate*delta_theta
+
+          #print loss
+          loss = jLoss(theta,X_train,y_train)
+
+          ################################################
+          # for verbose printing
+          ################################################
+          if self.verbose and i % self.print_every == 0:
+              # ANSI escape codes for colors and bold text
+              COLOR_CYAN = "\033[96m"
+              COLOR_GREEN = "\033[92m"
+              COLOR_YELLOW = "\033[93m"
+              COLOR_RED = "\033[91m"
+              COLOR_RESET = "\033[0m" # Resets all formatting
+
+              # Determine color based on loss trend (conceptual, you'd need history for this)
+              # For simplicity, let's just make the losses stand out.
+
+              # Header Line
+              print(f"{COLOR_CYAN}═════════════════════════════════════════════════{COLOR_RESET}")
+
+              # Epoch line
+              print(f"  {COLOR_CYAN}🌌 Epoch {i:<8}{COLOR_RESET} | {COLOR_GREEN}Training Loss: {loss:.2e}{COLOR_RESET} |", end="")
+
+              # Validation Loss line (if applicable)
+              if X_val is not None:
+                  val_loss = jLoss(theta, X_val, y_val)
+                  print(f" {COLOR_YELLOW}Validation Loss: {val_loss:.2e}{COLOR_RESET} |", end="")
+
+              print(f"\n{COLOR_CYAN}═════════════════════════════════════════════════{COLOR_RESET}")
+          ################################################
+
+          i += 1
+
+          if X_val is not None:
+              val_loss = jLoss(theta,X_val,y_val)
+              if val_loss < best_val_loss:
+                  self.best_param = theta
+                  best_val_loss = val_loss
+          elif loss < best_loss:
+              self.best_param = theta
+              best_loss = loss
+
+      if X_val is not None:
+          return self.best_param
+      else:
+          return self.best_param
+
+    def predict(self,theta,X_test):
+      """
+      Generates predictions (eigenvalues) on new test data using a trained set of parameters.
+
+      Parameters:
+          theta (jnp.array): The trained parameters (often the best_param returned by `train`).
+          X_test (jnp.array): The input features (X data) for prediction.
+
+      Returns:
+          jnp.array: The predicted values (first k eigenvalues) for X_test.
+      """
+      return self.update(theta,X_test)
+
+# how to use
+"""
+x_train = np.random.rand(100,5)
+y_train = np.random.rand(100,5)
+x_test = np.random.rand(100,5)
+y_test = np.random.rand(100,5)
+x_val = None
+y_val = None
+n = 5
+k = 1
+l = 1
+type = True #True: Complex
+
+Model = model(n,
+              x_train,
+              y_train,
+              k,
+              l,
+              type,
+              x_val,
+              y_val,
+              param=None,
+              epochs = np.inf,
+              learning_rate =0.01,
+              print_every = 100,
+              verbose=True)
+
+New_theta = Model.train()
+
+y_pred = Model.predict(New_theta,x_test)
+"""
+
+"""##LMG"""
+
+import math
 from itertools import combinations
 from matplotlib import pyplot as plt
-
-# ============================================================
-# Base class for many-body models (for structure)
-# ============================================================
 
 class ManyBodyModel:
     """
@@ -195,272 +547,444 @@ class LipkinModel(ManyBodyModel):
 
         return Jx, Jy, Jz
 
+# ------------------------
+# LIPKIN EXAMPLE
+# ------------------------
+N = 20
+epsilon_lip = 1.0
+k_levels = 3
 
+use_symmetric = True  # True: J=N/2 block; False: full 2^N
+lipkin = LipkinModel(N=N, epsilon=epsilon_lip,
+                      use_symmetric_sector=use_symmetric)
+print(f"{lipkin.name}, dim = {lipkin.dim}")
 
-# ============================================================
-# Parametric Matrix Model M(c) = A + c B
-# ============================================================
+V_train = np.linspace(0.0, 2.0, 20)
+V_test = np.linspace(0.0, 2.0, 100)
 
-class ParametricMatrixModel:
-    """
-    Parametric Matrix Model (PMM):
+E_train_lip = lipkin.spectrum(V_train, k=k_levels)
+E_test_lip = lipkin.spectrum(V_test, k=k_levels)
 
-        M(c) = A + c B
+# Plot exact Lipkin spectrum
+plt.figure(figsize=(8, 5))
+for ell in range(k_levels):
+    plt.plot(V_test, E_test_lip[:, ell], lw=2,
+              label=f"Exact Lipkin E_{ell}")
+plt.scatter(V_train, E_train_lip[:, 0], color="k", s=40,
+            label="Train points (ground)")
+plt.xlabel("V")
+plt.ylabel("E_n(V)")
+plt.title(f"Lipkin spectrum (N={N}, dim={lipkin.dim})")
+plt.legend()
+plt.tight_layout()
+plt.show()
 
-    where A and B are real symmetric n x n matrices.
-    This class can be trained to reproduce a set of target
-    eigenvalues E_true(c) (e.g., from a many-body model)
-    as a function of the control parameter c.
+"""##Train PMM on LMG"""
 
-    Training uses analytic gradients of eigenvalues:
-      d λ_l / dH = v_l v_l^T
-    """
+X_train = V_train.reshape(-1,1)
+y_train = E_train_lip
+x_val = None
+y_val = None
+n = 5
+k = 3
+l = 1
+type = True #True: Complex
 
-    def __init__(self, dim, k_levels,
-                 lr=1e-2, n_iter=2000,
-                 init_scale=0.1, seed=0,
-                 label="PMM"):
+Model = model(n,
+              X_train,
+              y_train,
+              k,
+              l,
+              type,
+              x_val,
+              y_val,
+              param=None,
+              epochs = 40000,
+              learning_rate =0.01,
+              print_every = 5000,
+              verbose=True)
+
+New_theta = Model.train()
+
+V_test = V_test.reshape(-1,1)
+y_pred = Model.predict(New_theta,V_test)
+plt.figure(figsize=(8, 5))
+for ell in range(k_levels):
+    plt.plot(V_test, E_test_lip[:, ell], lw=2,
+              label=f"Exact Lipkin E_{ell}")
+    plt.plot(V_test, y_pred[:, ell], "--", lw=2,
+              label=f"Reduced PMM E_{ell}")
+plt.xlabel("V")
+plt.ylabel("E_n(V)")
+plt.title(f"Lipkin: reduced PMM vs exact (n_eff={n}, dim={lipkin.dim})")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+!ec
+
+!split
+===== Time Evolution PMM =====
+
+This is under construction.
+
+!bc pycod
+class model2(object):
+    def __init__(self,
+                 n,
+                 X_train,
+                 y_train,
+                 k,
+                 l,
+                 r,
+                 type=True,
+                 X_val=None,
+                 y_val=None,
+                 param=None,
+                 epochs = np.inf,
+                 learning_rate =0.01,
+                 print_every = 100,
+                 verbose: bool = True):
+
         """
-        Parameters
-        ----------
-        dim : int
-            Matrix dimension of the PMM.
-        k_levels : int
-            Number of lowest eigenvalues to fit.
-        lr : float
-            Learning rate for Adam.
-        n_iter : int
-            Number of training iterations.
-        init_scale : float
-            Scale of random initialization.
-        seed : int
-            RNG seed.
-        label : str
-            Label for logging.
+        Initializes the Parameterized Matrix Model (PMM).
+
+        Parameters:
+            n (int): The size of the PMM matrix (n x n).
+            X_train (jnp.array): Training input features (X data).
+            y_train (jnp.array): Training target values (y data, typically k eigenvalues).
+            k (int): The number of eigenvalues (initial states) to be predicted.
+            l (int): The number of hamiltonian matrices (M_1, ..., M_l) in the PMM, where M = M_0 + sum(x_i * M_i).
+            r (int): The number of observable matrices (O_1, ..., O_r) in the PMM
+            type (bool, optional): If True, uses complex parameters (jnp.complex128). If False, uses real parameters (jnp.float64). Defaults to True.
+            X_val (jnp.array, optional): Validation input features. Defaults to None.
+            y_val (jnp.array, optional): Validation target values. Defaults to None.
+            param (jnp.array, optional): Saved initial parameters (theta) to use instead of generating new ones. Defaults to None.
+            epochs (int, optional): The maximum number of iterations for gradient descent (GD). Defaults to infinity (np.inf).
+            learning_rate (float, optional): The learning rate for the ADAM optimizer. Defaults to 0.01.
+            print_every (int, optional): Number of GD iterations before printing the loss. Defaults to 100.
+            verbose (bool, optional): Enable or disable printing the loss function during training. Defaults to True.
         """
-        self.dim = dim
-        self.k_levels = k_levels
-        self.lr = lr
-        self.n_iter = n_iter
-        self.init_scale = init_scale
-        self.seed = seed
-        self.label = label
 
-        self.A, self.B = self._init_params(dim, seed, init_scale)
+        self.n = n #size of PMM
+        self.y_train = y_train # y train set
+        self.X_train = X_train #x train set
+        self.k = k #number of initial states
+        self.l= l #number of M matrices
+        self.r = r #number of O observables
+        self.y_val = y_val #y validation set
+        self.X_val = X_val #x validatoin set
+        self.params = param #to used saved parameters
+        self.epochs = epochs #number of iteration for gd
+        self.learning_rate = learning_rate #learning rate
+        self.print_every = print_every #how many iterations of gd before pringing loss
+        self.verbose = verbose #enable for printing loss function
+        self.type = type #complex or real
+        if self.type == True:
+            self.dtype = jnp.complex128
+        elif self.type == False:
+            self.dtype = jnp.float64
 
-    # -- initialization --
-
-    @staticmethod
-    def _init_params(n, seed=0, scale=0.1):
-        rng = np.random.default_rng(seed)
-        A = scale * rng.normal(size=(n, n))
-        B = scale * rng.normal(size=(n, n))
-        A = 0.5 * (A + A.T)
-        B = 0.5 * (B + B.T)
-        return A, B
-
-    # -- PMM Hamiltonian and spectrum --
-
-    def hamiltonian(self, c):
+    ####################################
+    # 1. GETTING THE PARAMETERS
+    ####################################
+    def get_param(self):
         """
-        Return M(c) = A + c B (real symmetric).
+        Generates initial random parameters (theta) for the PMM.
+
+        The total number of parameters is (l + 1) * n * n + r * n * n,
+
+        (l + 1) * n * ncorresponding to the l+1 matrices: M_0 and the
+        l M_i matrices M_1 to M_l.
+
+        r * n * n corresponding to the r O observables.
+
+        Returns:
+            jnp.array: A flat array of randomly initialized parameters (theta).
+                       Complex if self.type is True, real otherwise.
         """
-        H = self.A + c * self.B
-        return 0.5 * (H + H.T)
+        num_params =  (self.l+1)*self.n*self.n + self.r*self.n*self.n
+        # Generate random parameters
+        if self.type == True:
+            theta = 0.01*(np.random.randn(num_params) + 1j*np.random.randn(num_params))
+        elif self.type == False:
+            theta = 0.01*(np.random.randn(num_params))
+        return theta
 
-    def eigensystem(self, c):
+    ####################################
+    # 2. SPLITTING THE PARAMETERS
+    ####################################
+    def split_params(self, theta):
+      """
+      Reshapes the flat parameter array (theta) into the PMM matrices O_0, O_1, ..., O_l.
+      It also enforces Hermitian symmetry for the matrices O_i by averaging with their conjugate transpose.
+
+      Parameters:
+          theta (jnp.array): A flat array of parameters.
+
+      Returns:
+          jnp.array: A 3D array of dimension (l+1, n, n) containing the Hermitian PMM matrices.
+                     The first slice O[0] corresponds to M_0, and O[1:] corresponds to M_1 to M_l.
+      """
+      theta = jnp.asarray(theta)
+      # M is split into M_0 (1st matrix) and M_1...M_l (l matrices)
+      # M = [M_0, M_1, ..., M_l] (l+1 matrices in total)
+      M = jnp.reshape(theta[:(self.l+1)*self.n*self.n],(self.l+1,self.n,self.n))
+      M = (M + M.conj().transpose(0,2,1))/2
+      # O is split into O_0...M_r (r matrices)
+      O = jnp.reshape(theta[(self.l+1)*self.n*self.n:],(self.r,self.n,self.n))
+      O = (O + O.conj().transpose(0,2,1))/2
+      return M,O
+
+
+    ####################################
+    # 3. PMM Model
+    ####################################
+    def update(self, theta, X_data):
+      """
+      Performs quantum time evolution and calculates the expectation values
+      of a set of observables for each input data point $X$.
+
+      The input features X are assumed to contain coupling constants/system parameters
+      and time $t$. The system Hamiltonian $H$ is constructed, time-evolved using
+      the phase factor $e^{-iEt}$, and then used to compute observable expectation
+      values.
+
+      Parameters:
+          theta (jnp.array): A flat array of model parameters used to define the
+                             Hamiltonian $H$ and the Observable matrices $O$.
+          X_data (jnp.array): Input features, where each row $x = [c_1, c_2, ..., t]$
+                              contains system parameters (c) and the evolution time (t).
+
+      Returns:
+          jnp.array: The predicted expectation values of the observables for each
+                     data point in X_data.
+      """
+      M,O = self.split_params(theta)
+      def pmm_ev(x,theta,O):
         """
-        Lowest k eigenvalues and corresponding eigenvectors of M(c).
+        Calculates the time-evolved state and observable expectation values.
         """
-        from numpy.linalg import eigh
-        H = self.hamiltonian(c)
-        evals, evecs = eigh(H)
-        return evals[:self.k_levels], evecs[:, :self.k_levels]
+        # The structure of x is assumed to be: x[0] = system parameter, x[1] = time t.
+        # The variable 'c' is x[0] and 't' is x[1]
+        c = x[0]
+        t = x[1]
 
-    def spectrum(self, c_grid):
+        # 1. Construct the Hamiltonian H:
+        # H = M_0 + sum_{i} x_i M_i. Note: This construction uses *all* components of x.
+        H = M[0] + jnp.einsum('i,ijk-jk',c,M[1:])
+
+        # 2. Diagonalize the Hamiltonian (Time-Independent Schrödinger Equation):
+        # E: Eigenvalues (Energy levels); V: Eigenvectors (Stationary States)
+        E,V = jnp.linalg.eigh(H)
+
+        # 3. Apply Time Evolution (Phase Factor):
+        # The first k energy levels E[:k] are used to compute the phase.
+        phase = jnp.exp(-1j* E[:self.k]*t)
+
+        # 4. Compute the Time-Evolved Density Matrix (or State):
+        # This constructs a time-evolved state based on the initial k states.
+        # psi_t = V_k @ Diag(exp(-i E_k t)) @ V_k^\dagger
+        # V[:k] are the k eigenvectors, and V[:k].conj().T is the conjugate transpose.
+        psi_t = V[:self.k]@jnp.diag(phase)@V[:self.k].conj().T
+
+        # 5. Calculate Expectation Values:
+        # <O> = Tr(\rho * O) or for a pure state <\psi|O|\psi>.
+        # Here it calculates $\langle O \rangle = \psi_t^\dagger O \psi_t$ for the
+        # time-evolved *density matrix* $\rho = \psi_t$ (which is actually a sub-block of the evolution operator).
+
+        # Vectorize over all observable matrices O
+        def observable(O_single):
+          return psi_t.conj().T@O_single@psi_t
+        Obv = vmap(observable,in_axes=(0))(O)
+        return Obv
+
+        # Vectorize the time evolution (pmm_ev) across all data points in X_data
+        y_pred = vmap(pmm_ev,in_axes=(0,None,None))(X_data,theta,O)
+        return y_pred
+
+
+    def Cost(self,y_true,y_pred):
+      """
+      Calculates the mean squared error (MSE) between true and predicted values.
+
+      Cost = mean(|y_true - y_pred|^2)
+
+      Parameters:
+          y_true (jnp.array): The true target values.
+          y_pred (jnp.array): The predicted values.
+
+      Returns:
+          float: The real-valued mean squared loss.
+      """
+      cost = jnp.mean((abs(y_true - y_pred)**2))
+      return cost.real
+
+
+    def Loss(self,theta,X_data,y_true):
+      """
+      Calculates the full loss function: first computes predictions, then the cost.
+
+      Parameters:
+          theta (jnp.array): Model parameters.
+          X_data (jnp.array): Input features.
+          y_true (jnp.array): True target values.
+
+      Returns:
+          float: The real-valued loss (Cost) for the given parameters and data.
+      """
+      y_pred = self.update(theta,X_data)
+      return self.Cost(y_true,y_pred)
+
+
+    def dLossdx(self,theta,X_data,y_true):
         """
-        Lowest k eigenvalues for an array of control parameters.
+        Computes the gradient of the Loss function with respect to the parameters (theta)
+        using JAX's automatic differentiation.
 
-        Returns
-        -------
-        E_pred : ndarray, shape (len(c_grid), k_levels)
+        Parameters:
+            theta (jnp.array): Model parameters.
+            X_data (jnp.array): Input features.
+            y_true (jnp.array): True target values.
+
+        Returns:
+            jnp.array: The gradient of the loss function with respect to theta.
         """
-        vals = []
-        for c in c_grid:
-            e, _ = self.eigensystem(c)
-            vals.append(e)
-        return np.array(vals)
+        return grad(self.Loss)(theta,X_data,y_true)
 
-    # -- training (spectrum loss only) --
-
-    @staticmethod
-    def _adam_update(param, grad_param, m, v, t, lr=1e-2,
-                     beta1=0.9, beta2=0.999, eps=1e-8):
-        m = beta1 * m + (1 - beta1) * grad_param
-        v = beta2 * v + (1 - beta2) * (grad_param * grad_param)
-        m_hat = m / (1 - beta1 ** (t + 1))
-        v_hat = v / (1 - beta2 ** (t + 1))
-        param = param - lr * m_hat / (np.sqrt(v_hat) + eps)
-        return param, m, v
-
-    def fit(self, params_train, E_train):
+    def ADAM(self,g,i,m,v):
         """
-        Fit the PMM so that the lowest k eigenvalues of M(c)
-        approximate E_train(c) for c in params_train.
+        Performs one step of the ADAM (Adaptive Moment Estimation) optimization algorithm.
 
-        Parameters
-        ----------
-        params_train : array-like, shape (n_points,)
-            Control parameter values c.
-        E_train : ndarray, shape (n_points, k_levels)
-            Target eigenvalues (e.g., from Lipkin or Pairing).
+        Parameters:
+            g (jnp.array): The current gradient of the loss function.
+            i (int): The current iteration number (0-indexed).
+            m (jnp.array): The previous biased first moment vector (m_{t-1}).
+            v (jnp.array): The previous biased second raw moment vector (v_{t-1}).
+
+        Returns:
+            tuple: (delta_theta, m_new, v_new) where:
+                   - delta_theta (jnp.array): The parameter update direction.
+                   - m_new (jnp.array): The updated first moment vector (m_t).
+                   - v_new (jnp.array): The updated second moment vector (v_t).
         """
-        A = self.A.copy()
-        B = self.B.copy()
-        n = self.dim
-        n_points, k = E_train.shape
-        assert k == self.k_levels
-
-        mA = np.zeros_like(A)
-        vA = np.zeros_like(A)
-        mB = np.zeros_like(B)
-        vB = np.zeros_like(B)
-
-        for t in range(self.n_iter):
-            grad_A = np.zeros_like(A)
-            grad_B = np.zeros_like(B)
-            loss_val = 0.0
-
-            for idx, p in enumerate(params_train):
-                # PMM eigensystem at param p
-                evals, evecs = self._eigs_for_grad(A, B, p)
-                diff = evals[:k] - E_train[idx]  # (k,)
-
-                loss_val += np.sum(diff**2)
-
-                # Gradient of eigenvalue λ_l wrt H is v_l v_l^T
-                factor = 2.0 / (n_points * k)
-                for l in range(k):
-                    g_coeff = factor * diff[l]
-                    v = evecs[:, l]
-                    outer = np.outer(v, v)
-                    grad_A += g_coeff * outer
-                    grad_B += g_coeff * p * outer
-
-            loss_val /= (n_points * k)
-
-            # Adam update
-            A, mA, vA = self._adam_update(A, grad_A, mA, vA, t, lr=self.lr)
-            B, mB, vB = self._adam_update(B, grad_B, mB, vB, t, lr=self.lr)
-
-            # Re-symmetrize
-            A = 0.5 * (A + A.T)
-            B = 0.5 * (B + B.T)
-
-            if t % 200 == 0 or t == self.n_iter - 1:
-                print(f"[{self.label}] iter {t:5d}  loss = {loss_val:.6e}")
-
-        self.A, self.B = A, B
-
-    @staticmethod
-    def _eigs_for_grad(A, B, c):
-        """
-        Helper: eigenvalues + eigenvectors of H(c) for gradient calculations.
-        """
-        from numpy.linalg import eigh
-        H = 0.5 * ((A + c * B) + (A + c * B).T)
-        evals, evecs = eigh(H)
-        return evals, evecs
+        b1=0.9
+        b2=0.999
+        eps=1e-8
+        # update biased first moment estimate
+        m_new = b1 * m + (1 - b1) * g
+        # update biased second raw moment estimate
+        v_new = b2 * v + (1 - b2) * (g*g.conj())
+        # compute bias-corrected first moment estimate
+        mhat = m_new / (1 - b1 ** (i + 1))
+        # compute bias-corrected second raw moment estimate
+        vhat = v_new / (1 - b2 ** (i + 1))
+        delta_theta = mhat / (jnp.sqrt(vhat) + eps)
+        return delta_theta, m_new, v_new
 
 
-# ============================================================
-# Demo / usage
-# ============================================================
+    def train(self):
+      """
+      Executes the training process using gradient descent with the ADAM optimizer.
 
-if __name__ == "__main__":
-    # ------------------------
-    # LIPKIN EXAMPLE
-    # ------------------------
-    N = 20
-    epsilon_lip = 1.0
-    k_levels = 3
+      The model iterates through a specified number of epochs, computes the gradient
+      of the loss, updates parameters using ADAM, and monitors the loss. It saves
+      the parameters that result in the best validation loss (if X_val is provided)
+      or the best training loss otherwise.
 
-    use_symmetric = True  # True: J=N/2 block; False: full 2^N
-    lipkin = LipkinModel(N=N, epsilon=epsilon_lip,
-                         use_symmetric_sector=use_symmetric)
-    print(f"{lipkin.name}, dim = {lipkin.dim}")
+      Returns:
+          jnp.array: The best set of parameters (theta) found during training.
+      """
+      theta = jnp.array(self.get_param() if self.params is None else self.params,dtype=self.dtype)
 
-    V_train = np.linspace(0.0, 2.0, 20)
-    V_test = np.linspace(0.0, 2.0, 100)
+      self.best_param = None
+      best_loss = np.inf
+      best_val_loss = np.inf
 
-    E_train_lip = lipkin.spectrum(V_train, k=k_levels)
-    E_test_lip = lipkin.spectrum(V_test, k=k_levels)
+      X_train = self.X_train
+      y_train = self.y_train
+      y_err = self.y_err
+      X_val = self.X_val
+      y_val = self.y_val
 
-    # Plot exact Lipkin spectrum
-    plt.figure(figsize=(8, 5))
-    for ell in range(k_levels):
-        plt.plot(V_test, E_test_lip[:, ell], lw=2,
-                 label=f"Exact Lipkin E_{ell}")
-    plt.scatter(V_train, E_train_lip[:, 0], color="k", s=40,
-                label="Train points (ground)")
-    plt.xlabel("V")
-    plt.ylabel("E_n(V)")
-    plt.title(f"Lipkin spectrum (N={N}, dim={lipkin.dim})")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+      # JAX Optimization: jit compiles the core mathematical operations (gradient,
+      # loss, PMM matrix construction, and eigenvalue computation) into a single,
+      # optimized XLA kernel for maximum speed.
+      # (dLossdx -> Loss -> update -> split_params) that uses JAX arrays.
+      jgrad = jit(lambda theta,X_train,y_train: self.dLossdx(theta,X_train,y_train,y))
+      jLoss = jit(lambda theta,X_train,y_train: self.Loss(theta,X_train,y_train,y))
+      jADAM = jit(lambda g_in, i_in, m_in, v_in: self.ADAM(g_in, i_in, m_in, v_in))
 
-    # Big PMM (same dim as Lipkin representation)
-    pmm_big_lip = ParametricMatrixModel(dim=lipkin.dim,
-                                        k_levels=k_levels,
-                                        lr=1e-2,
-                                        n_iter=2000,
-                                        init_scale=0.1,
-                                        seed=123,
-                                        label="Lipkin big PMM")
-    pmm_big_lip.fit(V_train, E_train_lip)
-    E_pred_big_lip = pmm_big_lip.spectrum(V_test)
+      #ADAM parameters
+      m = np.zeros(theta.shape, dtype=theta.dtype)
+      v = np.zeros(theta.shape, dtype=theta.dtype)
+      i = 0
+      num_samples = X_train.shape[0]
+      while i < self.epochs:
+          #calculate gradient
+          g = jgrad(theta,X_train,y_train)
+          delta_theta, m, v = jADAM(g.conj(),i,m,v)
+          theta = theta - self.learning_rate*delta_theta
 
-    plt.figure(figsize=(8, 5))
-    for ell in range(k_levels):
-        plt.plot(V_test, E_test_lip[:, ell], lw=2,
-                 label=f"Exact Lipkin E_{ell}")
-        plt.plot(V_test, E_pred_big_lip[:, ell], "--", lw=2,
-                 label=f"Big PMM E_{ell}")
-    plt.xlabel("V")
-    plt.ylabel("E_n(V)")
-    plt.title(f"Lipkin: big PMM vs exact (dim={lipkin.dim})")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+          #print loss
+          loss = jLoss(theta,X_train,y_train)
 
-    # Reduced PMM (n_eff < dim)
-    n_eff_lip = min(10, lipkin.dim)
-    print(f"\nLipkin: reduced PMM with n_eff = {n_eff_lip}")
-    pmm_red_lip = ParametricMatrixModel(dim=n_eff_lip,
-                                        k_levels=k_levels,
-                                        lr=5e-3,
-                                        n_iter=2000,
-                                        init_scale=0.1,
-                                        seed=456,
-                                        label="Lipkin reduced PMM")
-    pmm_red_lip.fit(V_train, E_train_lip)
-    E_pred_red_lip = pmm_red_lip.spectrum(V_test)
+          ################################################
+          # for verbose printing
+          ################################################
+          if self.verbose and i % self.print_every == 0:
+              # ANSI escape codes for colors and bold text
+              COLOR_CYAN = "\033[96m"
+              COLOR_GREEN = "\033[92m"
+              COLOR_YELLOW = "\033[93m"
+              COLOR_RED = "\033[91m"
+              COLOR_RESET = "\033[0m" # Resets all formatting
 
-    plt.figure(figsize=(8, 5))
-    for ell in range(k_levels):
-        plt.plot(V_test, E_test_lip[:, ell], lw=2,
-                 label=f"Exact Lipkin E_{ell}")
-        plt.plot(V_test, E_pred_red_lip[:, ell], "--", lw=2,
-                 label=f"Reduced PMM E_{ell}")
-    plt.xlabel("V")
-    plt.ylabel("E_n(V)")
-    plt.title(f"Lipkin: reduced PMM vs exact (n_eff={n_eff_lip}, dim={lipkin.dim})")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+              # Determine color based on loss trend (conceptual, you'd need history for this)
+              # For simplicity, let's just make the losses stand out.
 
+              # Header Line
+              print(f"{COLOR_CYAN}═════════════════════════════════════════════════{COLOR_RESET}")
 
+              # Epoch line
+              print(f"  {COLOR_CYAN}🌌 Epoch {i:<8}{COLOR_RESET} | {COLOR_GREEN}Training Loss: {loss:.2e}{COLOR_RESET} |", end="")
+
+              # Validation Loss line (if applicable)
+              if X_val is not None:
+                  val_loss = jLoss(theta, X_val, y_val)
+                  print(f" {COLOR_YELLOW}Validation Loss: {val_loss:.2e}{COLOR_RESET} |", end="")
+
+              print(f"\n{COLOR_CYAN}═════════════════════════════════════════════════{COLOR_RESET}")
+          ################################################
+
+          i += 1
+
+          if X_val is not None:
+              val_loss = jLoss(theta,X_val,y_val)
+              if val_loss < best_val_loss:
+                  self.best_param = theta
+                  best_val_loss = val_loss
+          elif loss < best_loss:
+              self.best_param = theta
+              best_loss = loss
+
+      if X_val is not None:
+          return self.best_param
+      else:
+          return self.best_param
+
+    def predict(self,theta,X_test):
+      """
+      Generates predictions (eigenvalues) on new test data using a trained set of parameters.
+
+      Parameters:
+          theta (jnp.array): The trained parameters (often the best_param returned by `train`).
+          X_test (jnp.array): The input features (X data) for prediction.
+
+      Returns:
+          jnp.array: The predicted values (first k eigenvalues) for X_test.
+      """
+      return self.update(theta,X_test)
 !ec
 
 
