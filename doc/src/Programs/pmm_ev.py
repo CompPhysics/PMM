@@ -610,14 +610,20 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
+#plot abs error
+plt.figure(figsize=(8, 5))
+for ell in range(k_levels):
+    plt.plot(V_test, abs(E_test_lip[:, ell] - y_pred[:, ell]), lw=2,label=f"E_{ell}")
+plt.xlabel("V")
+plt.ylabel("E_n(V)")
+plt.title(f"Lipkin: abs error (n_eff={n}, dim={lipkin.dim})")
+plt.yscale("log")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
 """#Time Evolution PMM
 
-Did not test this, just wrote how it might look like. I saw in your code you had an initial state psi_0. Is this something u feed in as input or do you learn it?
-
-Also there could be bugs in it since I did not test it.
-
-
-But all I did was copy past the above code, and replaced the get_param,split_param, and update function. Everything else stays the same.
 """
 
 class model2(object):
@@ -627,7 +633,7 @@ class model2(object):
                  y_train,
                  k,
                  l,
-                 r,
+                 #r,
                  type=True,
                  X_val=None,
                  y_val=None,
@@ -662,7 +668,7 @@ class model2(object):
         self.X_train = X_train #x train set
         self.k = k #number of initial states
         self.l= l #number of M matrices
-        self.r = r #number of O observables
+        #self.r = r #number of O observables
         self.y_val = y_val #y validation set
         self.X_val = X_val #x validatoin set
         self.params = param #to used saved parameters
@@ -694,7 +700,7 @@ class model2(object):
             jnp.array: A flat array of randomly initialized parameters (theta).
                        Complex if self.type is True, real otherwise.
         """
-        num_params =  (self.l+1)*self.n*self.n + self.r*self.n*self.n
+        num_params =  (self.l+1)*self.n*self.n #+ self.r*self.n*self.n
         # Generate random parameters
         if self.type == True:
             theta = 0.01*(np.random.randn(num_params) + 1j*np.random.randn(num_params))
@@ -723,9 +729,9 @@ class model2(object):
       M = jnp.reshape(theta[:(self.l+1)*self.n*self.n],(self.l+1,self.n,self.n))
       M = (M + M.conj().transpose(0,2,1))/2
       # O is split into O_0...M_r (r matrices)
-      O = jnp.reshape(theta[(self.l+1)*self.n*self.n:],(self.r,self.n,self.n))
-      O = (O + O.conj().transpose(0,2,1))/2
-      return M,O
+      #O = jnp.reshape(theta[(self.l+1)*self.n*self.n:],(self.r,self.n,self.n))
+      #O = (O + O.conj().transpose(0,2,1))/2
+      return M#,O
 
 
     ####################################
@@ -751,48 +757,60 @@ class model2(object):
           jnp.array: The predicted expectation values of the observables for each
                      data point in X_data.
       """
-      M,O = self.split_params(theta)
+      #M,O = self.split_params(theta)
+      M = self.split_params(theta)
       def pmm_ev(x,theta,O):
         """
-        Calculates the time-evolved state and observable expectation values.
+        Calculates the time-evolved state $\psi_t$ and the expectation value
+        of the Observable $O$ for a single input $x$.
         """
         # The structure of x is assumed to be: x[0] = system parameter, x[1] = time t.
         # The variable 'c' is x[0] and 't' is x[1]
         c = x[0]
         t = x[1]
+        c = c.reshape(1,)
 
-        # 1. Construct the Hamiltonian H:
-        # H = M_0 + sum_{i} x_i M_i. Note: This construction uses *all* components of x.
-        H = M[0] + jnp.einsum('i,ijk-jk',c,M[1:])
+        # Construct the Hamiltonian H from the PMM definition: $H = M_0 + \sum_{i=1}^l c_i M_i$
+        H = M[0] + jnp.einsum('i,ijk->jk',c,M[1:])
 
-        # 2. Diagonalize the Hamiltonian (Time-Independent Schrödinger Equation):
-        # E: Eigenvalues (Energy levels); V: Eigenvectors (Stationary States)
-        E,V = jnp.linalg.eigh(H)
+        # 2. Diagonalization of the Hamiltonian
+        # E: Eigenvalues (Energy levels, $E_n$). V: Eigenvectors (Stationary states, $|n\rangle$).
+        # jnp.linalg.eigh is used for Hermitian matrices, ensuring real eigenvalues.
+        E, V = jnp.linalg.eigh(H)
 
-        # 3. Apply Time Evolution (Phase Factor):
-        # The first k energy levels E[:k] are used to compute the phase.
-        phase = jnp.exp(-1j* E[:self.k]*t)
+        # 3. Time Evolution Operator
+        # Compute the phase factor: $e^{-i E_n t}$ for all $n$ energy levels.
+        phase = jnp.exp(-1j * E * t)
 
-        # 4. Compute the Time-Evolved Density Matrix (or State):
-        # This constructs a time-evolved state based on the initial k states.
-        # psi_t = V_k @ Diag(exp(-i E_k t)) @ V_k^\dagger
-        # V[:k] are the k eigenvectors, and V[:k].conj().T is the conjugate transpose.
-        psi_t = V[:self.k]@jnp.diag(phase)@V[:self.k].conj().T
+        # Compute the full time evolution operator (U(t) = exp(-iHt)).
+        # $U(t) = V \cdot \text{Diag}(e^{-i E_n t}) \cdot V^\dagger$
+        expm = V @ jnp.diag(phase) @ V.conj().T
 
-        # 5. Calculate Expectation Values:
-        # <O> = Tr(\rho * O) or for a pure state <\psi|O|\psi>.
-        # Here it calculates $\langle O \rangle = \psi_t^\dagger O \psi_t$ for the
-        # time-evolved *density matrix* $\rho = \psi_t$ (which is actually a sub-block of the evolution operator).
+        # 4. Initial State Definition
+        # $\psi_0$: Define the initial state as a superposition (or subspace)
+        # spanned by the first 'k' eigenvectors of the Hamiltonian.
+        # V[:,:self.k] selects the first 'k' columns (eigenvectors) of V.
+        psi_0 = V[:,:self.k]
 
-        # Vectorize over all observable matrices O
-        def observable(O_single):
-          return psi_t.conj().T@O_single@psi_t
-        Obv = vmap(observable,in_axes=(0))(O)
-        return Obv
+        # 5. Time-Evolved State
+        # Compute the time-evolved state: $\psi_t = U(t) \psi_0$
+        # Note: Since psi_0 is a matrix (subspace), psi_t is also a matrix.
+        psi_t = expm @ psi_0
 
-        # Vectorize the time evolution (pmm_ev) across all data points in X_data
-        y_pred = vmap(pmm_ev,in_axes=(0,None,None))(X_data,theta,O)
-        return y_pred
+        # 6. Observable Expectation Value
+        # Calculate the expectation value $\langle O \rangle$.
+        # Since psi_t is a $n \times k$ matrix, this operation computes $k \times k$
+        # expectation values: $\langle \psi_{t,i} | O | \psi_{t,j} \rangle$.
+        # O here is assumed to be a single $n \times n$ Observable matrix (M[0]).
+        Obv = psi_t.conj().T @ O @ psi_t
+
+        # The result is reshaped to a flat vector, likely to match the expected output format.
+        # This implies the model uses the elements of the $k \times k$ matrix as output targets.
+        return Obv.reshape(1,)
+      O = M[0]
+      # Vectorize the time evolution (pmm_ev) across all data points in X_data
+      y_pred = vmap(pmm_ev,in_axes=(0,None,None))(X_data,theta,O)
+      return y_pred
 
 
     def Cost(self,y_true,y_pred):
@@ -894,7 +912,6 @@ class model2(object):
 
       X_train = self.X_train
       y_train = self.y_train
-      y_err = self.y_err
       X_val = self.X_val
       y_val = self.y_val
 
@@ -902,8 +919,8 @@ class model2(object):
       # loss, PMM matrix construction, and eigenvalue computation) into a single,
       # optimized XLA kernel for maximum speed.
       # (dLossdx -> Loss -> update -> split_params) that uses JAX arrays.
-      jgrad = jit(lambda theta,X_train,y_train: self.dLossdx(theta,X_train,y_train,y))
-      jLoss = jit(lambda theta,X_train,y_train: self.Loss(theta,X_train,y_train,y))
+      jgrad = jit(lambda theta,X_train,y_train: self.dLossdx(theta,X_train,y_train,))
+      jLoss = jit(lambda theta,X_train,y_train: self.Loss(theta,X_train,y_train,))
       jADAM = jit(lambda g_in, i_in, m_in, v_in: self.ADAM(g_in, i_in, m_in, v_in))
 
       #ADAM parameters
@@ -976,4 +993,270 @@ class model2(object):
           jnp.array: The predicted values (first k eigenvalues) for X_test.
       """
       return self.update(theta,X_test)
+
+"""##LMG TIME"""
+
+import math
+import numpy as np
+from itertools import combinations
+from matplotlib import pyplot as plt
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+
+# ============================================================
+# Base class for many-body models (NumPy)
+# ============================================================
+
+class ManyBodyModel:
+    """
+    Abstract base for a parametric Hamiltonian H(g),
+    where g is a scalar control parameter (V, G, ...).
+    """
+
+    def __init__(self, dim, name="Model"):
+        self.dim = dim
+        self.name = name
+
+    # ------------- core API -------------
+
+    def hamiltonian(self, g):
+        """
+        Return the Hamiltonian H(g) as a dim x dim numpy array.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+
+    def spectrum(self, grid, k):
+        """
+        Compute lowest k eigenvalues for each value in grid.
+
+        Returns: E (len(grid), k)
+        """
+        from numpy.linalg import eigvalsh
+        E = []
+        for g in grid:
+            H = self.hamiltonian(g)
+            evals = eigvalsh(H)
+            E.append(evals[:k])
+        return np.array(E)
+
+    # ------------- time evolution (NumPy) -------------
+
+    def time_evolution(self, g, psi0, times):
+        """
+        Exact time evolution |psi(t)> = exp(-i H(g) t) |psi0>.
+        """
+        from numpy.linalg import eigh
+        H = self.hamiltonian(g)
+        evals, evecs = eigh(H)
+        coeffs = evecs.conj().T @ psi0
+
+        states = []
+        for t in times:
+            phase = np.exp(-1j * evals * t)
+            psi_t = evecs @ (phase * coeffs)
+            states.append(psi_t)
+        return np.array(states)
+
+    def observable_time_series(self, g, psi0, O, times):
+        """
+        <O>(t) for each t in times.
+        """
+        psi_t = self.time_evolution(g, psi0, times)
+        vals = []
+        for psi in psi_t:
+            vals.append(np.vdot(psi, O @ psi))
+        return np.array(vals)
+
+
+# ============================================================
+# Lipkin model (NumPy)
+# ============================================================
+
+class LipkinModel(ManyBodyModel):
+    """
+    Lipkin-Meshkov-Glick model:
+
+        H = epsilon * Jz + (V/N) * (Jx^2 - Jy^2)
+    """
+
+    def __init__(self, N, epsilon=1.0, use_symmetric_sector=True):
+        self.N = N
+        self.epsilon = epsilon
+        self.use_symmetric_sector = use_symmetric_sector
+
+        if use_symmetric_sector:
+            Jx, Jy, Jz = self._build_collective_operators_symmetric(N)
+            dim = Jx.shape[0]  # N+1
+            name = f"Lipkin (symmetric J=N/2, N={N})"
+        else:
+            Jx, Jy, Jz = self._build_collective_operators_full(N)
+            dim = Jx.shape[0]  # 2^N
+            name = f"Lipkin (full space, N={N})"
+
+        super().__init__(dim=dim, name=name)
+
+        self.Jx = Jx
+        self.Jy = Jy
+        self.Jz = Jz
+
+        self.H0 = epsilon * self.Jz
+        self.Hint = (1.0 / N) * (self.Jx @ self.Jx - self.Jy @ self.Jy)
+
+    def hamiltonian(self, V):
+        return self.H0 + V * self.Hint
+
+    @staticmethod
+    def _build_collective_operators_full(N):
+        dim = 2**N
+        sx = np.array([[0, 1],
+                       [1, 0]], dtype=np.complex128)
+        sy = np.array([[0, -1j],
+                       [1j, 0]], dtype=np.complex128)
+        sz = np.array([[1, 0],
+                       [0, -1]], dtype=np.complex128)
+        id2 = np.eye(2, dtype=np.complex128)
+
+        Jx = np.zeros((dim, dim), dtype=np.complex128)
+        Jy = np.zeros((dim, dim), dtype=np.complex128)
+        Jz = np.zeros((dim, dim), dtype=np.complex128)
+
+        for site in range(N):
+            ops = []
+            for pos in range(N):
+                if pos == site:
+                    ops.append((sx, sy, sz))
+                else:
+                    ops.append((id2, id2, id2))
+
+            sx_i = ops[0][0]
+            sy_i = ops[0][1]
+            sz_i = ops[0][2]
+            for pos in range(1, N):
+                sx_i = np.kron(sx_i, ops[pos][0])
+                sy_i = np.kron(sy_i, ops[pos][1])
+                sz_i = np.kron(sz_i, ops[pos][2])
+
+            Jx += 0.5 * sx_i
+            Jy += 0.5 * sy_i
+            Jz += 0.5 * sz_i
+
+        return Jx, Jy, Jz
+
+    @staticmethod
+    def _build_collective_operators_symmetric(N):
+        J = N / 2.0
+        dim = int(2 * J + 1)
+
+        M_vals = np.arange(J, -J - 1, -1, dtype=float)
+
+        Jp = np.zeros((dim, dim), dtype=np.complex128)
+        Jm = np.zeros((dim, dim), dtype=np.complex128)
+        Jz = np.zeros((dim, dim), dtype=np.complex128)
+
+        for i, M in enumerate(M_vals):
+            Jz[i, i] = M
+
+            if i > 0:
+                coef = math.sqrt(J * (J + 1.0) - M * (M + 1.0))
+                Jp[i - 1, i] = coef
+
+            if i < dim - 1:
+                coef = math.sqrt(J * (J + 1.0) - M * (M - 1.0))
+                Jm[i + 1, i] = coef
+
+        Jx = 0.5 * (Jp + Jm)
+        Jy = -0.5j * (Jp - Jm)
+
+        return Jx, Jy, Jz
+
+N = 4
+epsilon_lip = 1.0
+k_levels = 3
+
+lipkin = LipkinModel(N=N, epsilon=epsilon_lip,
+                    use_symmetric_sector=True)
+
+V_dyn = 1.0
+H_dyn = lipkin.hamiltonian(V_dyn)
+
+from numpy.linalg import eigh
+evals_dyn, evecs_dyn = eigh(H_dyn)
+psi0_true = evecs_dyn[:, 0]  # ground state
+
+Jz = lipkin.Jz
+
+T_max = 10.0
+Nt = 200
+times = np.linspace(0.0, T_max, Nt)
+
+Jz_t_true = lipkin.observable_time_series(V_dyn, psi0_true, Jz, times).real
+
+plt.figure(figsize=(8, 5))
+plt.plot(times, Jz_t_true, lw=2)
+plt.xlabel("t")
+plt.ylabel("<Jz(t)>")
+plt.title(f"Exact <Jz(t)> (Lipkin, V={V_dyn})")
+plt.tight_layout()
+plt.show()
+
+"""##Train PMM on $<Jz>_t$"""
+
+Jz_t = times.reshape(-1,1)
+V = np.full((times.shape[0],1),V_dyn)
+
+X = np.hstack((V,Jz_t))
+y = Jz_t_true.reshape(-1,1)
+
+X_train = X[:20]
+y_train = y[:20]
+
+x_val = None
+y_val = None
+n = 5
+k = 1 #here we are setting Psi_0 to be the ground state of the PMM V[:,0]
+l = 1
+type = True #True: Complex
+
+Model2 = model2(n,
+              X_train,
+              y_train,
+              k,
+              l,
+              type,
+              x_val,
+              y_val,
+              param=None,
+              epochs = 1000,
+              learning_rate =0.01,
+              print_every = 100,
+              verbose=True)
+
+New_theta = Model2.train()
+
+y_pred = Model2.predict(New_theta,X)
+plt.figure(figsize=(8, 5))
+plt.plot(times, Jz_t_true, lw=2, label="Exact <Jz(t)>")
+plt.plot(times, y_pred, "--", lw=2, label="PMM <Jz(t)>")
+#vertical line
+plt.axvline(x=times[20], color='r', linestyle='--',label='training data')
+plt.xlabel("t")
+plt.ylabel("<Jz(t)>")
+plt.title("Time evolution: exact vs PMM (AD)")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+#plot abs error
+plt.figure(figsize=(8, 5))
+plt.plot(times, np.abs(Jz_t_true.reshape(-1,) - y_pred.reshape(-1,)), lw=2)
+plt.xlabel("t")
+plt.ylabel("abs error")
+plt.title("abs error: exact vs PMM (AD)")
+plt.yscale('log')
+plt.tight_layout()
+plt.show()
 

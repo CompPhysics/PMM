@@ -18,6 +18,7 @@ o Add notes about entanglement measures
 ===== Code example where we use the Lipkin model and PMMs =====
 
 !bc pycod
+
 import numpy as np
 import jax
 import jax.numpy as jnp
@@ -26,8 +27,8 @@ from jax import config
 config.update("jax_enable_x64", True)
 config.update("jax_platform_name","cpu")
 
-"""
-Eigenvalue PMM
+"""#Eigenvalue PMM
+
 implements PMM using jax, and only GD not SGD/Batch
 """
 
@@ -621,14 +622,22 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-!ec
+#plot abs error
+plt.figure(figsize=(8, 5))
+for ell in range(k_levels):
+    plt.plot(V_test, abs(E_test_lip[:, ell] - y_pred[:, ell]), lw=2,label=f"E_{ell}")
+plt.xlabel("V")
+plt.ylabel("E_n(V)")
+plt.title(f"Lipkin: abs error (n_eff={n}, dim={lipkin.dim})")
+plt.yscale("log")
+plt.legend()
+plt.tight_layout()
+plt.show()
 
-!split
-===== Time Evolution PMM =====
+"""#Time Evolution PMM
 
-This is under construction.
+"""
 
-!bc pycod
 class model2(object):
     def __init__(self,
                  n,
@@ -636,7 +645,7 @@ class model2(object):
                  y_train,
                  k,
                  l,
-                 r,
+                 #r,
                  type=True,
                  X_val=None,
                  y_val=None,
@@ -671,7 +680,7 @@ class model2(object):
         self.X_train = X_train #x train set
         self.k = k #number of initial states
         self.l= l #number of M matrices
-        self.r = r #number of O observables
+        #self.r = r #number of O observables
         self.y_val = y_val #y validation set
         self.X_val = X_val #x validatoin set
         self.params = param #to used saved parameters
@@ -703,7 +712,7 @@ class model2(object):
             jnp.array: A flat array of randomly initialized parameters (theta).
                        Complex if self.type is True, real otherwise.
         """
-        num_params =  (self.l+1)*self.n*self.n + self.r*self.n*self.n
+        num_params =  (self.l+1)*self.n*self.n #+ self.r*self.n*self.n
         # Generate random parameters
         if self.type == True:
             theta = 0.01*(np.random.randn(num_params) + 1j*np.random.randn(num_params))
@@ -732,9 +741,9 @@ class model2(object):
       M = jnp.reshape(theta[:(self.l+1)*self.n*self.n],(self.l+1,self.n,self.n))
       M = (M + M.conj().transpose(0,2,1))/2
       # O is split into O_0...M_r (r matrices)
-      O = jnp.reshape(theta[(self.l+1)*self.n*self.n:],(self.r,self.n,self.n))
-      O = (O + O.conj().transpose(0,2,1))/2
-      return M,O
+      #O = jnp.reshape(theta[(self.l+1)*self.n*self.n:],(self.r,self.n,self.n))
+      #O = (O + O.conj().transpose(0,2,1))/2
+      return M#,O
 
 
     ####################################
@@ -760,48 +769,60 @@ class model2(object):
           jnp.array: The predicted expectation values of the observables for each
                      data point in X_data.
       """
-      M,O = self.split_params(theta)
+      #M,O = self.split_params(theta)
+      M = self.split_params(theta)
       def pmm_ev(x,theta,O):
         """
-        Calculates the time-evolved state and observable expectation values.
+        Calculates the time-evolved state $\psi_t$ and the expectation value
+        of the Observable $O$ for a single input $x$.
         """
         # The structure of x is assumed to be: x[0] = system parameter, x[1] = time t.
         # The variable 'c' is x[0] and 't' is x[1]
         c = x[0]
         t = x[1]
+        c = c.reshape(1,)
 
-        # 1. Construct the Hamiltonian H:
-        # H = M_0 + sum_{i} x_i M_i. Note: This construction uses *all* components of x.
-        H = M[0] + jnp.einsum('i,ijk-jk',c,M[1:])
+        # Construct the Hamiltonian H from the PMM definition: $H = M_0 + \sum_{i=1}^l c_i M_i$
+        H = M[0] + jnp.einsum('i,ijk->jk',c,M[1:])
 
-        # 2. Diagonalize the Hamiltonian (Time-Independent Schrödinger Equation):
-        # E: Eigenvalues (Energy levels); V: Eigenvectors (Stationary States)
-        E,V = jnp.linalg.eigh(H)
+        # 2. Diagonalization of the Hamiltonian
+        # E: Eigenvalues (Energy levels, $E_n$). V: Eigenvectors (Stationary states, $|n\rangle$).
+        # jnp.linalg.eigh is used for Hermitian matrices, ensuring real eigenvalues.
+        E, V = jnp.linalg.eigh(H)
 
-        # 3. Apply Time Evolution (Phase Factor):
-        # The first k energy levels E[:k] are used to compute the phase.
-        phase = jnp.exp(-1j* E[:self.k]*t)
+        # 3. Time Evolution Operator
+        # Compute the phase factor: $e^{-i E_n t}$ for all $n$ energy levels.
+        phase = jnp.exp(-1j * E * t)
 
-        # 4. Compute the Time-Evolved Density Matrix (or State):
-        # This constructs a time-evolved state based on the initial k states.
-        # psi_t = V_k @ Diag(exp(-i E_k t)) @ V_k^\dagger
-        # V[:k] are the k eigenvectors, and V[:k].conj().T is the conjugate transpose.
-        psi_t = V[:self.k]@jnp.diag(phase)@V[:self.k].conj().T
+        # Compute the full time evolution operator (U(t) = exp(-iHt)).
+        # $U(t) = V \cdot \text{Diag}(e^{-i E_n t}) \cdot V^\dagger$
+        expm = V @ jnp.diag(phase) @ V.conj().T
 
-        # 5. Calculate Expectation Values:
-        # <O> = Tr(\rho * O) or for a pure state <\psi|O|\psi>.
-        # Here it calculates $\langle O \rangle = \psi_t^\dagger O \psi_t$ for the
-        # time-evolved *density matrix* $\rho = \psi_t$ (which is actually a sub-block of the evolution operator).
+        # 4. Initial State Definition
+        # $\psi_0$: Define the initial state as a superposition (or subspace)
+        # spanned by the first 'k' eigenvectors of the Hamiltonian.
+        # V[:,:self.k] selects the first 'k' columns (eigenvectors) of V.
+        psi_0 = V[:,:self.k]
 
-        # Vectorize over all observable matrices O
-        def observable(O_single):
-          return psi_t.conj().T@O_single@psi_t
-        Obv = vmap(observable,in_axes=(0))(O)
-        return Obv
+        # 5. Time-Evolved State
+        # Compute the time-evolved state: $\psi_t = U(t) \psi_0$
+        # Note: Since psi_0 is a matrix (subspace), psi_t is also a matrix.
+        psi_t = expm @ psi_0
 
-        # Vectorize the time evolution (pmm_ev) across all data points in X_data
-        y_pred = vmap(pmm_ev,in_axes=(0,None,None))(X_data,theta,O)
-        return y_pred
+        # 6. Observable Expectation Value
+        # Calculate the expectation value $\langle O \rangle$.
+        # Since psi_t is a $n \times k$ matrix, this operation computes $k \times k$
+        # expectation values: $\langle \psi_{t,i} | O | \psi_{t,j} \rangle$.
+        # O here is assumed to be a single $n \times n$ Observable matrix (M[0]).
+        Obv = psi_t.conj().T @ O @ psi_t
+
+        # The result is reshaped to a flat vector, likely to match the expected output format.
+        # This implies the model uses the elements of the $k \times k$ matrix as output targets.
+        return Obv.reshape(1,)
+      O = M[0]
+      # Vectorize the time evolution (pmm_ev) across all data points in X_data
+      y_pred = vmap(pmm_ev,in_axes=(0,None,None))(X_data,theta,O)
+      return y_pred
 
 
     def Cost(self,y_true,y_pred):
@@ -903,7 +924,6 @@ class model2(object):
 
       X_train = self.X_train
       y_train = self.y_train
-      y_err = self.y_err
       X_val = self.X_val
       y_val = self.y_val
 
@@ -911,8 +931,8 @@ class model2(object):
       # loss, PMM matrix construction, and eigenvalue computation) into a single,
       # optimized XLA kernel for maximum speed.
       # (dLossdx -> Loss -> update -> split_params) that uses JAX arrays.
-      jgrad = jit(lambda theta,X_train,y_train: self.dLossdx(theta,X_train,y_train,y))
-      jLoss = jit(lambda theta,X_train,y_train: self.Loss(theta,X_train,y_train,y))
+      jgrad = jit(lambda theta,X_train,y_train: self.dLossdx(theta,X_train,y_train,))
+      jLoss = jit(lambda theta,X_train,y_train: self.Loss(theta,X_train,y_train,))
       jADAM = jit(lambda g_in, i_in, m_in, v_in: self.ADAM(g_in, i_in, m_in, v_in))
 
       #ADAM parameters
@@ -985,14 +1005,9 @@ class model2(object):
           jnp.array: The predicted values (first k eigenvalues) for X_test.
       """
       return self.update(theta,X_test)
-!ec
 
+"""##LMG TIME"""
 
-
-!split
-===== Lipkin model and time evolution =====
-
-!bc pycod
 import math
 import numpy as np
 from itertools import combinations
@@ -1170,387 +1185,92 @@ class LipkinModel(ManyBodyModel):
 
         return Jx, Jy, Jz
 
+N = 4
+epsilon_lip = 1.0
+k_levels = 3
+
+lipkin = LipkinModel(N=N, epsilon=epsilon_lip,
+                    use_symmetric_sector=True)
+
+V_dyn = 1.0
+H_dyn = lipkin.hamiltonian(V_dyn)
+
+from numpy.linalg import eigh
+evals_dyn, evecs_dyn = eigh(H_dyn)
+psi0_true = evecs_dyn[:, 0]  # ground state
+
+Jz = lipkin.Jz
+
+T_max = 10.0
+Nt = 200
+times = np.linspace(0.0, T_max, Nt)
+
+Jz_t_true = lipkin.observable_time_series(V_dyn, psi0_true, Jz, times).real
+
+plt.figure(figsize=(8, 5))
+plt.plot(times, Jz_t_true, lw=2)
+plt.xlabel("t")
+plt.ylabel("<Jz(t)>")
+plt.title(f"Exact <Jz(t)> (Lipkin, V={V_dyn})")
+plt.tight_layout()
+plt.show()
+
+"""##Train PMM on $<Jz>_t$"""
+
+Jz_t = times.reshape(-1,1)
+V = np.full((times.shape[0],1),V_dyn)
+
+X = np.hstack((V,Jz_t))
+y = Jz_t_true.reshape(-1,1)
+
+X_train = X[:20]
+y_train = y[:20]
+
+x_val = None
+y_val = None
+n = 5
+k = 1 #here we are setting Psi_0 to be the ground state of the PMM V[:,0]
+l = 1
+type = True #True: Complex
+
+Model2 = model2(n,
+              X_train,
+              y_train,
+              k,
+              l,
+              type,
+              x_val,
+              y_val,
+              param=None,
+              epochs = 1000,
+              learning_rate =0.01,
+              print_every = 100,
+              verbose=True)
+
+New_theta = Model2.train()
+
+y_pred = Model2.predict(New_theta,X)
+plt.figure(figsize=(8, 5))
+plt.plot(times, Jz_t_true, lw=2, label="Exact <Jz(t)>")
+plt.plot(times, y_pred, "--", lw=2, label="PMM <Jz(t)>")
+#vertical line
+plt.axvline(x=times[20], color='r', linestyle='--',label='training data')
+plt.xlabel("t")
+plt.ylabel("<Jz(t)>")
+plt.title("Time evolution: exact vs PMM (AD)")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+#plot abs error
+plt.figure(figsize=(8, 5))
+plt.plot(times, np.abs(Jz_t_true.reshape(-1,) - y_pred.reshape(-1,)), lw=2)
+plt.xlabel("t")
+plt.ylabel("abs error")
+plt.title("abs error: exact vs PMM (AD)")
+plt.yscale('log')
+plt.tight_layout()
+plt.show()
 
-# ============================================================
-# Pairing model (NumPy, spectrum/time only as data source)
-# ============================================================
-
-class PairingModel(ManyBodyModel):
-    """
-    Pairing Hamiltonian in the seniority-zero subspace:
-
-        H = sum_j 2 eps_j n_j - G sum_{i,j} P_i^† P_j
-    """
-
-    def __init__(self, omega, N_pairs, eps_levels):
-        self.omega = omega
-        self.N_pairs = N_pairs
-        self.eps_levels = np.array(eps_levels, dtype=float)
-
-        basis, cfg_to_idx = self._build_basis(omega, N_pairs)
-        self.basis = basis
-        self.cfg_to_idx = cfg_to_idx
-        dim = len(basis)
-
-        super().__init__(dim=dim,
-                         name=f"Pairing(omega={omega}, N_pairs={N_pairs})")
-
-    def hamiltonian(self, G):
-        return self._pairing_hamiltonian(G)
-
-    @staticmethod
-    def _build_basis(omega, N_pairs):
-        levels = range(omega)
-        basis = list(combinations(levels, N_pairs))
-        cfg_to_idx = {cfg: i for i, cfg in enumerate(basis)}
-        return basis, cfg_to_idx
-
-    def _pairing_hamiltonian(self, G):
-        omega = self.omega
-        eps_levels = self.eps_levels
-        basis = self.basis
-        cfg_to_idx = self.cfg_to_idx
-
-        dim = len(basis)
-        H = np.zeros((dim, dim), dtype=np.complex128)
-
-        for a, cfg in enumerate(basis):
-            n_j = np.zeros(omega, dtype=int)
-            for j in cfg:
-                n_j[j] = 1
-
-            diag_sp = np.sum(2.0 * eps_levels * n_j)
-            diag_pair = -G * np.sum(n_j)
-            H[a, a] += diag_sp + diag_pair
-
-            for j in cfg:
-                for i in range(omega):
-                    if i == j:
-                        continue
-                    if n_j[i] == 0:
-                        new_cfg = tuple(sorted((set(cfg) - {j}) | {i}))
-                        b = cfg_to_idx[new_cfg]
-                        H[b, a] += -G
-
-        return H
-
-
-# ============================================================
-# PMM with autograd (PyTorch)
-# ============================================================
-
-class ParametricMatrixModelAD(nn.Module):
-    """
-    Parametric Matrix Model with automatic differentiation:
-
-        M(c) = A + c B,  (A,B real unconstrained matrices)
-        H(c) = (M + M^T)/2 is the symmetric Hamiltonian.
-
-    - Spectrum loss: fit lowest k eigenvalues vs parameter grid.
-    - Time evolution + observable time series implemented in Torch.
-    """
-
-    def __init__(self, dim, k_levels,
-                 lr=1e-2, n_epochs=1000,
-                 init_scale=0.1, seed=0,
-                 label="PMM-AD", device="cpu"):
-        super().__init__()
-        self.dim = dim
-        self.k_levels = k_levels
-        self.lr = lr
-        self.n_epochs = n_epochs
-        self.init_scale = init_scale
-        self.seed = seed
-        self.label = label
-        self.device = device
-
-        torch.manual_seed(seed)
-        self.A = nn.Parameter(init_scale * torch.randn(dim, dim, dtype=torch.float64,
-                                                       device=device))
-        self.B = nn.Parameter(init_scale * torch.randn(dim, dim, dtype=torch.float64,
-                                                       device=device))
-
-    # --------- core Hamiltonian / spectrum (Torch) ---------
-
-    def symmetrized(self, M):
-        return 0.5 * (M + M.T)
-
-    def hamiltonian_torch(self, c):
-        """
-        c: scalar or 0-d torch tensor
-        """
-        if not torch.is_tensor(c):
-            c = torch.tensor(c, dtype=torch.float64, device=self.device)
-        A_sym = self.symmetrized(self.A)
-        B_sym = self.symmetrized(self.B)
-        H = A_sym + c * B_sym
-        return self.symmetrized(H)
-
-    def eigs_torch(self, c):
-        """
-        Return lowest k eigenvalues (and full eigenvectors) of H(c).
-        """
-        H = self.hamiltonian_torch(c)
-        evals, evecs = torch.linalg.eigh(H)
-        return evals[:self.k_levels], evecs  # evecs: (dim, dim)
-
-    def spectrum(self, c_grid):
-        """
-        Convenience wrapper: return numpy spectrum vs c_grid.
-        """
-        self.eval()
-        vals = []
-        for c in c_grid:
-            evals, _ = self.eigs_torch(c)
-            vals.append(evals.detach().cpu().numpy())
-        return np.array(vals)
-
-    # --------- time evolution & observables (Torch) ---------
-
-    def time_evolution(self, c, psi0, times):
-        """
-        Torch-based time evolution:
-          psi0: torch.complex128, shape (dim,)
-          times: 1D torch.float64
-        Returns: psi_t (len(times), dim) complex128
-        """
-        H = self.hamiltonian_torch(c)                    # real symmetric
-        evals, evecs = torch.linalg.eigh(H)              # real
-        evecs_c = evecs.to(torch.complex128)
-        evals_c = evals.to(torch.complex128)
-
-        coeffs = torch.conj(evecs_c).T @ psi0            # (dim,)
-
-        states = []
-        for t in times:
-            phase = torch.exp(-1j * evals_c * t)
-            psi_t = evecs_c @ (phase * coeffs)
-            states.append(psi_t)
-        return torch.stack(states, dim=0)                # (Nt, dim)
-
-    def observable_time_series(self, c, psi0, O, times):
-        """
-        <O>(t) for the PMM at control parameter c.
-
-        psi0: complex (dim,)
-        O   : complex (dim,dim)
-        times: 1D real
-        """
-        psi_t = self.time_evolution(c, psi0, times)      # (Nt, dim)
-        # expectation: psi^† O psi
-        O_psi = psi_t @ O.T
-        obs = torch.sum(torch.conj(psi_t) * O_psi, dim=1)
-        return obs                                       # complex
-
-    # --------- spectrum training (AD) ---------
-
-    def fit_spectrum(self, params_train, E_train_np):
-        """
-        Fit lowest k eigenvalues vs params_train using AD.
-
-        params_train: 1D numpy array
-        E_train_np: (n_points, k_levels) numpy array
-        """
-        self.train()
-
-        params_t = torch.tensor(params_train, dtype=torch.float64,
-                                device=self.device)
-        E_true_t = torch.tensor(E_train_np, dtype=torch.float64,
-                                device=self.device)
-
-        optimizer = optim.Adam(self.parameters(), lr=self.lr)
-
-        n_points = params_t.shape[0]
-
-        for epoch in range(self.n_epochs):
-            optimizer.zero_grad()
-            losses = []
-
-            for i in range(n_points):
-                c = params_t[i]
-                evals, _ = self.eigs_torch(c)                 # (k_levels,)
-                loss_i = torch.mean((evals - E_true_t[i])**2)
-                losses.append(loss_i)
-
-            loss = torch.stack(losses).mean()
-            loss.backward()
-            optimizer.step()
-
-            if epoch % 200 == 0 or epoch == self.n_epochs - 1:
-                print(f"[{self.label} / spectrum] epoch {epoch:4d}, "
-                      f"loss = {loss.item():.6e}")
-
-
-# ============================================================
-# Time-Observable PMM subclass with AD
-# ============================================================
-
-class TimeObservablePMM(ParametricMatrixModelAD):
-    """
-    PMM with an additional time-observable loss:
-
-        L_time = mean_t | <O>(t)_PMM - <O>(t)_true |^2
-
-    Uses PyTorch autograd for gradients.
-    """
-
-    def time_loss(self, c, times_t, psi0_t, O_t, obs_true_t):
-        """
-        All arguments are torch tensors (on the correct device).
-        """
-        obs_pred = self.observable_time_series(c, psi0_t, O_t, times_t)
-        # Use real part if observable is Hermitian
-        diff = obs_pred.real - obs_true_t
-        return torch.mean(diff**2)
-
-    def fit_time(self, c, times_np, psi0_np, O_np, obs_true_np,
-                 lr_time=1e-3, n_epochs_time=200):
-        """
-        Time-dependent observable training (AD).
-
-        c: scalar control parameter
-        times_np: 1D numpy array (Nt,)
-        psi0_np: 1D numpy array (dim,) complex128
-        O_np: 2D numpy array (dim,dim) complex128
-        obs_true_np: 1D numpy array (Nt,) real or complex
-        """
-        self.train()
-
-        times_t = torch.tensor(times_np, dtype=torch.float64,
-                               device=self.device)
-        psi0_t = torch.tensor(psi0_np, dtype=torch.complex128,
-                              device=self.device)
-        O_t = torch.tensor(O_np, dtype=torch.complex128,
-                           device=self.device)
-        obs_true_t = torch.tensor(obs_true_np.real, dtype=torch.float64,
-                                  device=self.device)
-
-        optimizer = optim.Adam(self.parameters(), lr=lr_time)
-
-        c_t = torch.tensor(c, dtype=torch.float64, device=self.device)
-
-        for epoch in range(n_epochs_time):
-            optimizer.zero_grad()
-            loss = self.time_loss(c_t, times_t, psi0_t, O_t, obs_true_t)
-            loss.backward()
-            optimizer.step()
-
-            if epoch % 10 == 0 or epoch == n_epochs_time - 1:
-                print(f"[{self.label} / time] epoch {epoch:4d}, "
-                      f"loss = {loss.item():.6e}")
-
-
-# ============================================================
-# Demo / usage
-# ============================================================
-
-if __name__ == "__main__":
-    device = "cpu"  # change to "cuda" if you have a GPU
-
-    # ------------------------
-    # LIPKIN: spectrum + time
-    # ------------------------
-    N = 4
-    epsilon_lip = 1.0
-    k_levels = 3
-
-    lipkin = LipkinModel(N=N, epsilon=epsilon_lip,
-                         use_symmetric_sector=True)
-    print(f"{lipkin.name}, dim = {lipkin.dim}")
-
-    V_train = np.linspace(0.0, 2.0, 20)
-    V_test = np.linspace(0.0, 2.0, 100)
-
-    # Exact Lipkin spectra
-    E_train_lip = lipkin.spectrum(V_train, k=k_levels)
-    E_test_lip = lipkin.spectrum(V_test, k=k_levels)
-
-    plt.figure(figsize=(8, 5))
-    for ell in range(k_levels):
-        plt.plot(V_test, E_test_lip[:, ell], lw=2,
-                 label=f"Exact Lipkin E_{ell}")
-    plt.scatter(V_train, E_train_lip[:, 0], color="k", s=40,
-                label="Train points (ground)")
-    plt.xlabel("V")
-    plt.ylabel("E_n(V)")
-    plt.title(f"Lipkin spectrum (N={N}, dim={lipkin.dim})")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-    # Big PMM for spectrum
-    pmm_big = TimeObservablePMM(dim=lipkin.dim,
-                                k_levels=k_levels,
-                                lr=1e-2,
-                                n_epochs=800,
-                                init_scale=0.1,
-                                seed=123,
-                                label="Lipkin big PMM",
-                                device=device)
-    pmm_big.fit_spectrum(V_train, E_train_lip)
-    E_pred_big = pmm_big.spectrum(V_test)
-
-    plt.figure(figsize=(8, 5))
-    for ell in range(k_levels):
-        plt.plot(V_test, E_test_lip[:, ell], lw=2,
-                 label=f"Exact E_{ell}")
-        plt.plot(V_test, E_pred_big[:, ell], "--", lw=2,
-                 label=f"PMM E_{ell}")
-    plt.xlabel("V")
-    plt.ylabel("E_n(V)")
-    plt.title("Lipkin: PMM (AD) vs exact spectrum")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-    # ----- Time-dependent training on <Jz(t)> -----
-    V_dyn = 1.0
-    H_dyn = lipkin.hamiltonian(V_dyn)
-
-    from numpy.linalg import eigh
-    evals_dyn, evecs_dyn = eigh(H_dyn)
-    psi0_true = evecs_dyn[:, 0]  # ground state
-
-    Jz = lipkin.Jz
-
-    T_max = 10.0
-    Nt = 200
-    times = np.linspace(0.0, T_max, Nt)
-
-    Jz_t_true = lipkin.observable_time_series(V_dyn, psi0_true, Jz, times).real
-
-    plt.figure(figsize=(8, 5))
-    plt.plot(times, Jz_t_true, lw=2)
-    plt.xlabel("t")
-    plt.ylabel("<Jz(t)>")
-    plt.title(f"Exact <Jz(t)> (Lipkin, V={V_dyn})")
-    plt.tight_layout()
-    plt.show()
-
-    print("\nTime training PMM on <Jz(t)> using AD ...")
-    pmm_big.fit_time(c=V_dyn,
-                     times_np=times,
-                     psi0_np=psi0_true,
-                     O_np=Jz,
-                     obs_true_np=Jz_t_true,
-                     lr_time=1e-3,
-                     n_epochs_time=80)
-
-    Jz_t_pmm = pmm_big.observable_time_series(
-        V_dyn,
-        torch.tensor(psi0_true, dtype=torch.complex128, device=device),
-        torch.tensor(Jz, dtype=torch.complex128, device=device),
-        torch.tensor(times, dtype=torch.float64, device=device)
-    ).detach().cpu().numpy().real
-
-    plt.figure(figsize=(8, 5))
-    plt.plot(times, Jz_t_true, lw=2, label="Exact <Jz(t)>")
-    plt.plot(times, Jz_t_pmm, "--", lw=2, label="PMM <Jz(t)>")
-    plt.xlabel("t")
-    plt.ylabel("<Jz(t)>")
-    plt.title("Time evolution: exact vs PMM (AD)")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
 
 !ec
