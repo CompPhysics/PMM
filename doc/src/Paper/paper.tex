@@ -248,6 +248,9 @@ for one-dimensional critical systems, even though the LMG model is infinite-rang
 Such universality underscores that entanglement, rather than spatial locality,
 captures the essential signatures of quantum criticality.
 
+\section{Parametric Matrix Models}
+
+
 \section{Results and discussions}
 
 
@@ -257,3 +260,212 @@ captures the essential signatures of quantum criticality.
 \end{document}
 
 
+### 🔹 1. What is a Parametric Matrix Model (PMM)?
+
+A **Parametric Matrix Model** describes a system (or dataset) through a matrix whose **entries depend on a set of tunable parameters**. Formally, one writes:
+[
+M(\theta) = \sum_i \theta_i A_i,
+]
+where ( {A_i} ) are fixed basis matrices and ( {\theta_i} ) are parameters to be learned or optimized.
+Such models can represent **Hamiltonians**, **covariance matrices**, **kernels**, or **linear transformations** whose structure reflects known physics, symmetries, or constraints.
+
+---
+
+### 🔹 2. Why this matters for machine learning
+
+#### (a) **Compact, structured representations**
+
+Unlike dense neural networks that learn arbitrary mappings, PMMs impose a **low-dimensional, interpretable structure**. This makes them ideal for:
+
+* learning models with **few but physically meaningful parameters**,
+* ensuring **stability** and **symmetry preservation** (e.g., Hermiticity, orthogonality),
+* reducing overfitting and improving **generalization**.
+
+#### (b) **Differentiable and compatible with gradient-based learning**
+
+Because ( M(\theta) ) is parametric and smooth in its parameters, it can be integrated seamlessly with automatic differentiation frameworks (e.g., PyTorch, TensorFlow). This allows one to **train PMMs end-to-end** as part of a neural architecture—for instance, as a differentiable layer encoding physical interactions or correlations.
+
+#### (c) **Learning from spectral or dynamical data**
+
+In quantum mechanics, the spectrum and dynamics of a system depend on its Hamiltonian matrix. PMMs allow ML models to learn **maps from parameters to observables** (e.g., energies, eigenvectors, correlation functions). This has direct implications for:
+
+* learning **effective Hamiltonians**,
+* building **surrogate models** for quantum simulations,
+* predicting **phase transitions** or **control parameters**.
+
+#### (d) **Bridging data-driven and physics-informed modeling**
+
+PMMs enable **hybrid learning**, where parts of the model are learned from data and parts are constrained by physical principles. For example:
+
+* embedding PMMs in a neural network can encode **unitarity**, **time-reversal symmetry**, or **particle-number conservation**,
+* combining PMMs with variational learning yields **interpretable latent spaces** corresponding to physically relevant degrees of freedom.
+
+---
+
+### 🔹 3. Concrete examples of PMMs in machine learning
+
+| Domain                           | Example                                                                     | Role of PMM                                             |
+| -------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **Quantum ML**                   | Parametric Hamiltonians used for variational quantum algorithms (VQE, QAOA) | Learn optimal control parameters or ground states       |
+| **Graph and geometric learning** | Parametric Laplacians or adjacency matrices                                 | Encode relational structure or learn diffusion dynamics |
+| **Neural networks**              | Structured linear layers (e.g., Toeplitz, low-rank, or orthogonal matrices) | Improve efficiency, stability, and interpretability     |
+| **Generative models**            | PMMs as latent variable generators with controlled covariance               | Capture correlations in high-dimensional data           |
+| **Control theory / RL**          | Parametric transition matrices                                              | Model and optimize stochastic dynamics                  |
+
+---
+
+### 🔹 4. Connection to recent research
+
+The recent work *“Parametric Matrix Models”* (Cook, Jammooa, Hjorth-Jensen, D. D. Lee, D. Lee, *Nat. Commun.* **16**, 5929 (2025)) shows that PMMs can **learn physically consistent effective theories** directly from data — in particular, how parameters influence spectral and dynamical properties.
+This bridges **machine learning** and **quantum many-body physics**, allowing one to:
+
+* infer **Hamiltonian landscapes**,
+* emulate **complex correlated systems**, and
+* guide **quantum control or materials design**.
+
+---
+
+### 🔹 5. In summary
+
+Parametric Matrix Models are valuable in ML because they:
+
+1. Encode structure, symmetries, and interpretability.
+2. Reduce model complexity and improve generalization.
+3. Provide differentiable, physics-informed representations.
+4. Connect data-driven learning with analytical and physical insight.
+
+In short — they offer a **bridge between pure data fitting and mechanistic understanding**, making them ideal for scientific machine learning and quantum technology applications.
+
+---
+
+Would you like me to write a short academic-style paragraph that summarizes this (e.g. for inclusion in a proposal or article)?
+
+
+%Parametric Matrix Models (PMMs) offer a structured and interpretable framework for integrating machine learning with physical modeling. In these models, system properties are represented by matrices whose elements depend smoothly on tunable parameters, allowing complex correlations and symmetries to be encoded within a compact, differentiable form. PMMs thus bridge data-driven and physics-informed learning, enabling efficient training of spectral, dynamical, and control properties of quantum systems. Recent work~\cite{cook_PMM_2025} has shown that PMMs can infer effective Hamiltonians and emulate correlated quantum dynamics from data, highlighting their promise for interpretable and efficient scientific machine learning.
+
+
+
+
+Perfect — thank you, that’s exactly the level of direction I needed.
+
+Below is a **5-page research proposal** written in the academic and structural style of a **Norwegian Research Council (NFR)** project application.
+It focuses on **Parametric Matrix Models (PMMs)** as a novel framework for modeling, learning, and controlling quantum and mesoscopic systems — blending *physics motivation* with *application relevance* in quantum materials, control, and machine learning.
+The tone and format align with NFR expectations for *Excellence*, *Objectives*, *Implementation*, and *Impact*.
+
+---
+
+## **Parametric Matrix Models for Quantum Systems: A Physics-Informed Machine Learning Framework**
+
+### **1. Scientific Background and Motivation**
+
+The ability to model, predict, and control the behavior of complex quantum systems is central to the ongoing second quantum revolution. Across quantum chemistry, condensed matter, and quantum technology, the challenge lies in bridging the gap between microscopic Hamiltonian descriptions and emergent macroscopic phenomena. Traditional methods—such as exact diagonalization or coupled-cluster theory—are computationally demanding, often scaling exponentially with system size. Machine learning (ML) offers a complementary route by enabling data-driven discovery of patterns and effective models. However, standard ML approaches typically lack interpretability, stability, and physical consistency.
+
+**Parametric Matrix Models (PMMs)** constitute a new class of models that combine the structure and interpretability of physics-based modeling with the flexibility of modern ML. In a PMM, physical observables or operators are represented as matrices whose elements depend smoothly on a set of tunable parameters:
+[
+M(\boldsymbol{\theta}) = \sum_i \theta_i A_i,
+]
+where (A_i) are fixed basis matrices and (\theta_i) are learnable parameters. This parametric representation preserves the linear-algebraic structure of quantum mechanics while allowing data-driven optimization. PMMs naturally encode physical constraints such as Hermiticity, particle-number conservation, or gauge invariance, ensuring that learned models remain physically meaningful.
+
+Recent work by Cook, Jammooa, Hjorth-Jensen, D. D. Lee, and D. Lee (*Nat. Commun.* **16**, 5929 (2025)) demonstrated that PMMs can accurately learn effective Hamiltonians and emulate correlated quantum dynamics from data. This establishes PMMs as a promising framework for **interpretable machine learning of quantum systems**, enabling the discovery of emergent behaviors and controllable dynamics.
+
+---
+
+### **2. Objectives**
+
+The overarching goal of this project is to develop a comprehensive theoretical and computational framework for **Parametric Matrix Models** and demonstrate their application to **quantum control and correlated materials**.
+
+The specific objectives are:
+
+1. **Theory development:** Establish a rigorous theoretical foundation for PMMs, including their representational power, symmetries, and connection to quantum field theory and control theory.
+2. **Algorithmic implementation:** Develop efficient, differentiable algorithms for PMM training and optimization within TensorFlow and PyTorch, ensuring scalability to many-body systems.
+3. **Applications to quantum control:** Apply PMMs to the identification and optimization of control Hamiltonians in mesoscopic systems such as superconducting qubits, optomechanical oscillators, and electrons on helium.
+4. **Applications to quantum materials:** Use PMMs to learn effective low-dimensional Hamiltonians from *ab initio* or experimental data, capturing correlation effects and phase transitions in strongly interacting systems.
+5. **Open software and data dissemination:** Develop an open-source PMM module as part of the Hylleraas Software Platform, ensuring reproducibility and uptake by the wider research community.
+
+---
+
+### **3. Research Plan and Methodology**
+
+#### **3.1 Theoretical development**
+
+We will derive the mathematical formalism of PMMs from the perspective of quantum information geometry and operator theory. The project will explore:
+
+* The relationship between PMMs and variational quantum circuits (VQCs);
+* Conditions for controllability and expressivity of matrix parametrizations;
+* Theoretical guarantees on stability, convergence, and representational accuracy.
+  This work will establish PMMs as a generalization of both variational and kernel methods with explicit quantum structure.
+
+#### **3.2 Numerical and ML implementation**
+
+We will implement PMMs as differentiable layers within established ML frameworks, using automatic differentiation to compute gradients of spectral and dynamical quantities. Efficient linear algebra backends will enable large-scale training of matrix models.
+The team will explore different parameterizations, such as:
+
+* **Low-rank PMMs** for scalable representation of many-body systems;
+* **Symmetry-constrained PMMs** for spin, particle-number, and time-reversal invariance;
+* **Dynamic PMMs** that incorporate time-dependent control fields.
+  Model performance will be evaluated on synthetic and experimental datasets relevant to quantum control and materials science.
+
+#### **3.3 Applications**
+
+**(a) Quantum control.**
+We will use PMMs to learn and optimize control Hamiltonians for mesoscopic quantum systems. Examples include:
+
+* feedback and reservoir engineering in superconducting circuits (circuit QED),
+* feedback cooling in optomechanical oscillators,
+* electronic control of charge qubits on helium and defect-based spin qubits.
+  By learning effective control landscapes directly from simulation or experimental data, PMMs can uncover optimal control strategies beyond analytical reach.
+
+**(b) Quantum materials.**
+PMMs will be trained to learn effective low-dimensional Hamiltonians from *ab initio* data or experimental observables (e.g., photoemission spectra, correlation functions). The approach will be applied to:
+
+* the Hubbard and Heisenberg models for correlated electron systems;
+* spin–orbit–coupled defects in silicon carbide;
+* light–matter interaction in cavity QED materials.
+  By parameterizing Hamiltonians in matrix form, PMMs can capture emergent phenomena such as Mott transitions or spin-charge separation.
+
+#### **3.4 Implementation and collaboration**
+
+The project will be led by **Prof. Morten Hjorth-Jensen** (UiO) with collaboration from **Prof. David Lee** (NCSU/UiO) and researchers at the Hylleraas Centre and the QONTROL initiative. Two PhD candidates and one postdoctoral fellow will contribute to theory, algorithm development, and applications. The project will leverage the national computing resources at Sigma2 and integrate its software within the Hylleraas Software Platform.
+
+---
+
+### **4. Expected Outcomes and Impact**
+
+This project will deliver:
+
+1. **A unified theoretical framework** for PMMs, establishing them as a key paradigm in physics-informed machine learning.
+2. **Scalable computational tools** for learning and controlling quantum systems with guaranteed physical consistency.
+3. **Demonstrations of PMM-based control and modeling** in realistic systems (superconducting qubits, quantum defects, and correlated materials).
+4. **Open software and datasets**, enabling wide dissemination through the Hylleraas and QONTROL platforms.
+
+The impact extends across physics, chemistry, and quantum technology:
+
+* **Scientific impact:** PMMs provide a bridge between machine learning and analytical theory, offering interpretable insights into many-body correlations and control.
+* **Technological impact:** Data-driven quantum control can enhance the robustness and scalability of quantum devices, supporting Norway’s strategic role in quantum technology.
+* **Educational and societal impact:** The project will train young researchers at the interface of physics and AI, aligning with national priorities in digitalization and quantum innovation.
+
+---
+
+### **5. Project Organization and Dissemination**
+
+The project will run for four years and be organized into three work packages (WPs):
+
+| WP      | Title                                         | Description                                              | Responsible         |
+| ------- | --------------------------------------------- | -------------------------------------------------------- | ------------------- |
+| **WP1** | Theory of Parametric Matrix Models            | Mathematical foundations, expressivity, and symmetries   | UiO (Hjorth-Jensen) |
+| **WP2** | Algorithm and Software Development            | Differentiable PMM modules, benchmarking, ML integration | UiO, Hylleraas      |
+| **WP3** | Applications to Quantum Control and Materials | Implementation and validation in physical systems        | UiO, NCSU, partners |
+
+**Dissemination** will include publications in high-impact journals, open-source software release, and presentations at international conferences (APS March Meeting, QuCoNa, FQMT). Annual workshops on “Machine Learning and Quantum Control” will be organized in Oslo, in coordination with the Hylleraas Centre and QONTROL.
+
+---
+
+### **6. References**
+
+\begin{thebibliography}{99}
+\bibitem{Cook2025} P. Cook, D. Jammooa, M. Hjorth-Jensen, D. D. Lee, and D. Lee, *Parametric Matrix Models*, \emph{Nat. Commun.} **16**, 5929 (2025).
+\bibitem{WisemanMilburn2010} H. M. Wiseman and G. J. Milburn, *Quantum Measurement and Control*, Cambridge University Press (2010).
+\bibitem{WerschnikGross2007} J. Werschnik and E. K. U. Gross, *Quantum optimal control theory: An overview*, \emph{J. Phys. B} **40**, R175 (2007).
+\bibitem{Carleo2019} G. Carleo et al., *Machine learning and the physical sciences*, \emph{Rev. Mod. Phys.} **91**, 045002 (2019).
+\bibitem{AspuruGuzik2018} A. Aspuru-Guzik, R. Lindh, and M. Reiher, *The matter simulation (r)evolution*, \emph{ACS Cent. Sci.} **4**, 144 (2018).
+\end{thebibliography}
