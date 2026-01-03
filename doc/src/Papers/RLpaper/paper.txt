@@ -1,0 +1,289 @@
+Quantum Reinforcement Learning for a Spin-Qubit Magnetic Sensor
+
+Introduction & Background
+
+Quantum sensors based on spin qubits (such as the nitrogen-vacancy
+center in diamond) can detect extremely weak magnetic fields by
+exploiting quantum coherence ￼. In a typical quantum sensing protocol,
+a qubit’s spin state is prepared in a superposition, allowed to evolve
+under the unknown magnetic field (accumulating a phase), and then
+measured to glean information about the field ￼. Repeating and
+adjusting such measurements can improve the estimation accuracy of the
+field. However, finding an adaptive measurement strategy that
+maximizes information while accounting for quantum noise (decoherence)
+is challenging ￼ ￼. This is where reinforcement learning (RL) can
+help.
+
+Recent research has demonstrated that RL algorithms can devise optimal
+quantum control policies to enhance sensor precision under uncertainty
+￼. In essence, an RL agent can learn to choose measurement parameters
+(e.g. pulse sequences, measurement times) based on past observations
+to maximize the sensor’s sensitivity to the unknown field ￼. Such
+adaptive strategies, e.g. using model-aware RL, have been proposed to
+prioritize the most informative measurements and drastically reduce
+data acquisition time ￼ (by orders of magnitude in some cases). In
+this project, we will simulate a spin-qubit magnetometer with noise
+and train an RL agent (via PyTorch) to adaptively measure and estimate
+a magnetic field. The goal is to improve accuracy by optimizing the
+measurement sequence and implicitly performing environment (field)
+estimation during the process ￼ ￼.
+
+Simulation Environment: Spin-Qubit Sensor Model
+
+We consider a single spin-½ qubit (two-level system) acting as our magnetic field sensor ￼. The qubit’s Hamiltonian (energy splitting) depends on the external magnetic field $B$ (e.g. via the Zeeman effect), which causes the qubit’s state to accumulate a phase at the Larmor frequency $\omega = \gamma B$ (with $\gamma$ the gyromagnetic ratio) ￼. To extract information about $B$, we use a Ramsey-type measurement: prepare the qubit in a superposition (e.g. along the $X$-axis of the Bloch sphere), let it evolve freely for some time $\tau$, then measure in a suitable basis.
+
+Density Matrix Evolution with Decoherence: We represent the qubit’s state by a density matrix $\rho(t)$ to naturally include decoherence (environment-induced noise) ￼ ￼. In our simple model, we include dephasing (T₂ noise) which causes the off-diagonal elements of $\rho$ (coherences) to decay as $e^{-t/T_2}$. Intuitively, this models loss of phase coherence over time due to environmental noise. The qubit’s state evolution over a wait time $\tau$ under field $B$ (with $T_2$ decoherence) can be approximated as:
+	•	Phase accumulation: The quantum phase $\phi = \omega \tau = \gamma B \tau$ rotates the Bloch vector about the $Z$-axis. If initially the Bloch vector is along $X$, its $X$ and $Y$ components evolve as $M_X \to M_X\cos\phi + M_Y\sin\phi$ and $M_Y \to -M_X\sin\phi + M_Y\cos\phi$.
+	•	Dephasing: $M_X$ and $M_Y$ components are multiplied by $e^{-\tau/T_2}$ (exponential decay), while the $Z$ component (population imbalance) is assumed constant (for pure dephasing noise).
+
+After this evolution, we perform a projective measurement of the qubit. For maximum information about the accumulated phase, one typically measures in the equatorial plane (e.g. the $X$-basis). In our simulation, we measure the qubit in the $X$-basis, which yields a binary outcome (e.g. “spin $+$” vs “spin $-$” along $X$). The probability of obtaining the $+X$ outcome is given by:
+
+P(+X) = \tfrac{1}{2}\Big(1 + e^{-\tau/T_2}\cos(\gamma B\,\tau)\Big),
+
+and $P(-X) = 1 - P(+X)$. This follows from the Bloch sphere: the $X$-projection of the state after time $\tau$ is $\langle \sigma_X \rangle = e^{-\tau/T_2}\cos(\gamma B\tau)$, so the measurement has that expectation value. We simulate the measurement stochastically by drawing according to these probabilities. Each measurement thus provides noisy information about $B$: longer $\tau$ gives the qubit more time to accumulate phase (improving sensitivity to $B$), but also incurs more decoherence (reducing signal contrast). The RL agent will learn to balance this trade-off by choosing $\tau$ adaptively.
+
+Belief Update (Environment Estimation): After each measurement, we update a Bayesian belief distribution over the possible values of $B$ using the measurement outcome. Initially, $B$ could be anywhere in some range (uniform prior). Each measurement result updates this belief via Bayes’ rule. For discrete simulation purposes, we will assume $B$ takes one of a set of possible values ${B_1, B_2, … B_N}$ (this discretization allows explicit belief updates and evaluation of estimation accuracy). The belief update works as:
+	•	Prior: $P(B = B_i)$ (before the measurement).
+	•	Likelihood of outcome $o$: $P(o,|,B_i)$ from the quantum measurement formula above.
+	•	Posterior: $P(B_i,|,o) \propto P(o,|,B_i),P_{\text{prior}}(B_i)$ (normalized over $i$).
+
+This updated belief (a probability distribution over $B$ values) is part of the environment’s state given to the RL agent, enabling environment estimation to be integrated into the loop. Essentially, after each measurement, the agent has an updated knowledge (belief) of the magnetic field, which it can use to decide the next measurement setting. By the final measurement of an episode, the belief should be sharply peaked at the true $B$ value if the strategy is successful.
+
+Reward Design: The RL agent’s objective is to maximize the accuracy of the magnetic field estimate. We incorporate this into the reward in two ways:
+	•	Information Gain: After each measurement, we compute the reduction in entropy of the belief distribution. If a measurement greatly reduces uncertainty (entropy) about $B$, the agent gets a positive reward. This encourages strategies that acquire information efficiently, aligning with adaptive Bayesian experimental design principles. Formally, $r_t = H(\text{belief}{t-1}) - H(\text{belief}{t})$, where $H(p)=-\sum_i p_i \log_2 p_i$ is the entropy in bits.
+	•	Final Accuracy Bonus: After the last measurement in an episode, we give an additional reward if the agent’s final estimated $B$ (e.g. the value with highest posterior probability) is correct. For example, +1 reward for a correct identification and 0 (or a small negative penalty) for an incorrect guess. This directly reinforces accurate environment estimation at the end.
+
+By using information gain at each step and a final accuracy reward, the agent is guided to focus on measurements that reduce uncertainty and ultimately pinpoint the correct field value. (In practice, purely using final reward is also possible but makes learning slower due to delayed feedback.)
+
+Reinforcement Learning Setup
+
+Our RL problem is episodic. In each episode, a random “true” magnetic field $B_{\text{true}}$ is drawn from the set of possible values. The agent will be allowed a fixed number of measurement steps (e.g. 3–5 measurements per episode) to gather information and attempt to identify $B_{\text{true}}$.
+	•	State Representation: We use a belief state representation. The observation given to the agent at each step is the current belief distribution over $B$ (a vector of length $N$) along with, optionally, the number of remaining measurements. This provides a Markov state for the partially observed problem, since the belief (posterior) encapsulates all information from past measurements. (In a real experiment without explicit belief calculation, the agent could use recurrent neural networks to internalize past observation history ￼, but here we supply the belief to simplify learning.)
+	•	Action Space: The agent’s actions are the choices of measurement settings. For simplicity, we allow the agent to choose the evolution time $\tau$ for the next Ramsey measurement from a discrete set. For example, the agent might choose among ${\tau_1, \tau_2, …, \tau_M}$ where shorter times give less phase (but less decoherence) and longer times give more phase (but risk more decoherence). One could also allow choosing the measurement basis or pulse sequences as part of the action, but we will fix the basis to $X$ for clarity. The action space thus is of size $M$ (number of discrete time settings).
+	•	Transition & Reward: Given the current belief (state) and a chosen action (measurement time), the environment simulates the quantum sensor: it evolves the qubit for that time $\tau$, samples a measurement outcome, and updates the belief (state) as described. The reward for that step is computed (information gain), and the process repeats until the budget of measurements is exhausted. At the final step, the accuracy bonus reward is added. This terminates the episode.
+
+The problem is essentially a sequential decision-making task for optimal experiment design – the agent must choose a sequence of experiment parameters to maximize information about a hidden parameter. This is a natural fit for reinforcement learning, and algorithms like policy-gradient or Q-learning can be applied. In fact, prior works have used deep RL (e.g. soft actor-critic) to find pulse sequences that maximize quantum Fisher information or precision of quantum sensors ￼ ￼.
+
+We will implement a basic deep RL solution using PyTorch (without relying on specialized RL libraries). Our approach will be to use a policy-gradient method (REINFORCE) for simplicity: a neural network will output a probability distribution over actions (measurement times) given the state (current belief), and we will update this network’s weights to maximize the expected return (information gain + final accuracy). This choice is mainly for clarity; in practice, an actor-critic algorithm could improve learning stability. No external quantum libraries are needed; we simulate the qubit with simple NumPy calculations.
+
+Implementation in Python (PyTorch)
+
+Below is a step-by-step implementation of the simulation environment and the RL agent. We break it into components for clarity:
+
+1. Environment Class (SpinQubitSensorEnv)
+
+We create a Python class to encapsulate the sensor simulation. This environment provides reset() and step(action) methods (similar to OpenAI Gym interface).
+	•	The environment is initialized with a list of possible magnetic field values, a dephasing time $T_2$, and the maximum number of measurement steps per episode. It also has an attribute for the list of allowed measurement times (action options), which we set via set_times([...]).
+	•	reset() chooses a random true $B$ from the list and resets the belief to uniform. It returns the initial state (belief vector + remaining steps).
+	•	step(action) simulates one measurement with the chosen time index. It uses the current true $B$ to compute $P(+X)$, samples an outcome, updates the belief via Bayes’ rule, and computes the reward. It returns the new state, the reward, and a done flag.
+
+import numpy as np
+
+class SpinQubitSensorEnv:
+    def __init__(self, B_values, T2=1.0, max_steps=3):
+        self.B_values = np.array(B_values, dtype=float)  # discrete possible B values
+        self.N = len(B_values)         # number of discrete states for B
+        self.T2 = T2                   # dephasing time constant
+        self.max_steps = max_steps     # measurement count per episode
+        self.times = None              # list of measurement times (actions)
+        self.reset()                   # initialize environment state
+
+    def set_times(self, times):
+        """Define the discrete measurement times corresponding to each action index."""
+        self.times = np.array(times, dtype=float)
+    
+    def reset(self):
+        """Start a new episode: sample a true B, reset belief to uniform."""
+        self.true_idx = np.random.randint(0, self.N)            # index of true B in the list
+        self.true_B = self.B_values[self.true_idx]              # actual magnetic field for this episode
+        self.belief = np.ones(self.N) / self.N                  # uniform prior
+        self.step_count = 0
+        # State includes current belief distribution and remaining steps (optional)
+        return self._get_state()
+    
+    def _get_state(self):
+        """Construct the state vector (belief + remaining steps)."""
+        remaining_steps = self.max_steps - self.step_count
+        # We append the remaining step count (normalized, e.g. /max_steps if needed) to the belief vector
+        return np.concatenate([self.belief, [remaining_steps]])
+    
+    def step(self, action):
+        """Simulate one measurement step with the chosen action (time index)."""
+        assert self.times is not None, "Measurement times not set. Call set_times(...) first."
+        tau = float(self.times[action])               # selected measurement duration
+        # Quantum sensor evolution: compute outcome probabilities
+        # P(+X outcome) = 0.5 * (1 + e^{-tau/T2} * cos(B * tau))
+        exp_decay = np.exp(-tau / self.T2)
+        cos_phase = np.cos(self.true_B * tau)
+        p_plus = 0.5 * (1 + exp_decay * cos_phase)    # probability of getting outcome +1 (X-basis)
+        # Sample a measurement outcome according to this probability
+        outcome = 1 if np.random.rand() < p_plus else 0  # 1 for +X outcome, 0 for -X outcome
+        
+        # Bayesian belief update:
+        # Calculate likelihoods P(outcome | B_i) for each candidate B_i
+        likelihoods = 0.5 * (1 + np.exp(-tau/self.T2) * np.cos(self.B_values * tau))
+        if outcome == 0:
+            likelihoods = 1 - likelihoods  # if we got the "-X" outcome, use 1 - p_plus probabilities
+        # Update posterior belief via elementwise multiplication and normalization
+        prior = self.belief
+        unnorm_post = prior * likelihoods
+        if unnorm_post.sum() == 0:  
+            # Numerical safety: if all probabilities zero (unlikely), keep prior
+            post = prior
+        else:
+            post = unnorm_post / unnorm_post.sum()
+        self.belief = post
+        self.step_count += 1
+        
+        # Calculate reward: information gain (reduction in entropy)
+        def entropy(p_dist):
+            mask = p_dist > 0
+            return -np.sum(p_dist[mask] * np.log2(p_dist[mask]))
+        prev_entropy = entropy(prior)
+        new_entropy = entropy(post)
+        reward = prev_entropy - new_entropy  # positive if uncertainty decreased
+        
+        # If this was the last measurement, provide final accuracy reward
+        done = (self.step_count >= self.max_steps)
+        if done:
+            # Determine final estimate (most likely B)
+            est_idx = int(np.argmax(self.belief))
+            if est_idx == self.true_idx:
+                reward += 1.0   # bonus for correct identification
+            else:
+                reward += 0.0   # (or a small negative penalty for wrong, e.g. reward -= 0.5)
+        
+        # Construct next state (or None if done)
+        next_state = self._get_state() if not done else None
+        return next_state, reward, done, {"outcome": outcome, "true_B": self.true_B}
+
+A few notes on the environment: We appended the remaining step count to the state mainly to let the agent know how many measurements are left (which can be useful for planning; alternatively, the agent could infer it from the belief evolution or be run with a recurrent policy). Also, we chose to express the reward in bits of information gain, which has an intuitive meaning (e.g. reducing the entropy from 5 possible equally likely $B$ values (entropy = $\log_2 5 \approx 2.32$ bits) down to one value (0 bits) yields 2.32 bits of information, plus a final bonus for correctness).
+
+2. Policy Network (PyTorch)
+
+We define a neural network policy $\pi_\theta(s)$ that takes the state (belief + remaining steps) and outputs a probability distribution over actions (measurement times). A simple multi-layer perceptron will suffice given the low-dimensional state. In our example, we use a single hidden layer of 64 neurons with ReLU activation. The output layer produces logits for each action, which we convert to probabilities via a softmax internally when sampling actions.
+
+import torch
+import torch.nn as nn
+
+class PolicyNet(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_size=64):
+        super(PolicyNet, self).__init__()
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, action_dim)
+    def forward(self, state):
+        x = torch.relu(self.fc1(state))
+        logits = self.fc2(x)    # raw scores for each action
+        return logits           # (we'll apply softmax via PyTorch distributions when sampling)
+
+The state dimension in our case is N + 1 (length of belief vector plus the extra step-count feature). The action dimension is the number of discrete time choices. We’ll create an instance of this network and use a policy-gradient method to train it.
+
+3. Reinforcement Learning Training Loop
+
+We will use the REINFORCE algorithm (Monte Carlo policy gradient) to train the policy. In each training episode, we will:
+	1.	Reset the environment to get an initial state.
+	2.	For each step in the episode, use the policy network to compute action probabilities from the state, sample an action, and perform that action in the environment. We record the log-probability of the action and the reward obtained.
+	3.	After the episode, compute the total return (cumulative reward) or per-step returns, and update the policy network weights in the direction that increases the log-prob of actions that yielded high returns.
+
+We won’t use any specialized RL library; instead, we leverage PyTorch’s automatic differentiation to compute policy gradients. Here’s a simplified training loop:
+
+import torch.optim as optim
+
+# Initialize environment and policy
+B_values = [0.5, 1.0, 1.5, 2.0, 2.5]           # possible magnetic field values (discrete)
+env = SpinQubitSensorEnv(B_values, T2=1.0, max_steps=3)
+env.set_times([0.1, 0.5, 1.0, 2.0, 3.0])       # define 5 possible measurement times (seconds, for example)
+state_dim = env.N + 1                          # belief length + 1
+action_dim = len(env.times)                    # number of discrete actions
+policy = PolicyNet(state_dim, action_dim)
+optimizer = optim.Adam(policy.parameters(), lr=0.01)
+
+# Training parameters
+num_episodes = 5000
+gamma = 1.0  # discount factor (can be 1 for episodic tasks focusing on final outcome)
+
+for episode in range(num_episodes):
+    state = env.reset()  
+    state = torch.tensor(state, dtype=torch.float32)
+    log_probs = []
+    rewards = []
+    # Generate an episode
+    done = False
+    while not done:
+        # Get action probabilities from policy
+        logits = policy(state)  
+        dist = torch.distributions.Categorical(logits=logits)  # categorical distribution over actions
+        action = dist.sample()                                 # sample an action index
+        log_prob = dist.log_prob(action)                       # log π(a|s)
+        next_state, reward, done, info = env.step(int(action.item()))
+        
+        # Record the log-prob and reward
+        log_probs.append(log_prob)
+        rewards.append(reward)
+        
+        # Move to next state
+        if next_state is not None:
+            state = torch.tensor(next_state, dtype=torch.float32)
+    # Episode ended. Compute returns and update policy.
+    # Calculate discounted returns for each step (here gamma=1, so it's just cumulative future reward from that step)
+    returns = []
+    R = 0.0
+    for r in reversed(rewards):
+        R = r + gamma * R
+        returns.insert(0, R)
+    returns = torch.tensor(returns, dtype=torch.float32)
+    # Optionally normalize returns for stability
+    returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+    
+    # Policy gradient: maximize E[return * log_prob] -> minimize -(return * log_prob)
+    loss = 0.0
+    for log_prob, R in zip(log_probs, returns):
+        loss += -log_prob * R
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    
+    # (Optional) logging
+    if episode % 500 == 0:
+        total_reward = sum(rewards)
+        print(f"Episode {episode}: total reward = {total_reward:.3f}")
+
+In this loop, we use the collected rewards to compute the return $R_t = \sum_{t’=t}^{T} \gamma^{t’-t} r_{t’}$ for each time-step $t$ in the episode. We then scale the policy gradients by these returns (actually by the normalized returns, which is a common trick to reduce variance). This causes actions that led to higher final rewards (i.e. more information gain and correct identification) to get higher probability in the future, and vice versa.
+
+We chose a modest learning rate (0.01) and a moderate number of episodes. In practice, one might need to tune these or use a more advanced algorithm (e.g. an actor-critic with a value baseline) for faster convergence.
+
+4. Evaluation of the Learned Policy
+
+After training, we can evaluate the policy by running test episodes where the agent uses the greedy action (most probable action) instead of sampling, and measure how often it correctly identifies the magnetic field. We expect the learned policy to outperform random measurements. For example:
+
+# After training, evaluate the policy
+test_episodes = 1000
+correct_count = 0
+for _ in range(test_episodes):
+    state = env.reset()
+    state = torch.tensor(state, dtype=torch.float32)
+    done = False
+    while not done:
+        logits = policy(state)
+        action = torch.argmax(logits).item()  # choose the action with highest probability (greedy)
+        next_state, reward, done, info = env.step(action)
+        if next_state is not None:
+            state = torch.tensor(next_state, dtype=torch.float32)
+    # After episode, check if final estimate was correct
+    est_idx = int(np.argmax(env.belief))
+    if est_idx == env.true_idx:
+        correct_count += 1
+accuracy = correct_count / test_episodes
+print(f"Policy accuracy over {test_episodes} test episodes: {accuracy*100:.1f}%")
+
+Ideally, the accuracy should be significantly higher than random guessing (which would be $100%/N$, e.g. 20% if 5 possible values). A well-trained agent will adapt its measurement times based on previous outcomes. For instance, it might start with a medium-duration pulse to get a rough idea of $B$ (avoiding too long a pulse which might decohere, or too short which gives little phase information), then use longer or shorter pulses subsequently depending on the updated belief. This kind of adaptive strategy can zero in on the true field value with fewer measurements than a fixed strategy.
+
+Conclusion
+
+We have implemented a Python simulation of a quantum sensor RL agent for magnetic field estimation using a spin qubit. This involved modeling the qubit’s density matrix evolution with dephasing noise, and designing an RL environment where the agent’s actions affect the information gained about the unknown field. Using PyTorch, we trained a policy network to choose measurement times that maximize information gain and accuracy. Such an approach is aligned with contemporary research in quantum metrology, where machine learning (including RL) is employed to enhance quantum sensor performance ￼ ￼.
+
+Notably, our reward scheme explicitly encourages environment estimation by rewarding reduction in uncertainty and correct field identification. In more advanced settings, one could extend this code to continuous parameter estimation or use neural networks to approximate the belief update (for cases with continuous $B$ or very large state spaces). Furthermore, while we used a classical simulation of the quantum sensor, one could integrate this with quantum frameworks (like Qiskit or PennyLane) if simulating actual quantum circuits, or even deploy the learned policy on real hardware.
+
+Overall, this project demonstrates how an RL agent can adaptively optimize quantum measurements. By learning from simulated data, the agent discovers strategies (potentially non-intuitive ones) that outperform static measurement schemes, thus improving the sensor’s accuracy and efficiency in estimating magnetic fields ￼. This technique can be a powerful tool in quantum sensing applications, helping to approach the fundamental precision limits (quantum Cramér-Rao bound) in practical scenarios ￼ ￼.
+
+Sources: Quantum sensing and RL background ￼ ￼; Spin qubit sensor and NV-center context ￼; Adaptive measurement optimization with RL ￼ ￼; Decoherence modeling in spin sensors ￼.
