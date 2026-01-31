@@ -20,11 +20,10 @@
 
 \begin{document}
 
-\title{Reinforcement Learning for Quantum Sensing:\\
-Phase and Field Estimation Across Quantum Platforms}
+\title{Notes on Reinforcement Learning for Quantum Sensing: Phase and Field Estimation Across Quantum Platforms}
 
-\author{ }
-\affiliation{ }
+\author{Morten Hjorth-Jensen }
+\affiliation{QTAI and UiO, Norway}
 
 \date{\today}
 
@@ -59,6 +58,48 @@ In practice, however, realistic sensors must operate under noise,
 decoherence, control imperfections, and incomplete information about
 the parameter of interest.
 
+A canonical sensing task is phase estimation: preparing a quantum
+state, letting it pick up an unknown phase $\phi$, then measuring to
+infer $\phi$.  The ultimate precision is limited by the Cramér–Rao
+bound, $\mathrm{Var}(\hat\phi)\ge1/(N F)$, where $F$ is the Fisher
+information and $N$ the number of trials.  In quantum metrology, one
+maximizes the quantum Fisher information (QFI) of the probe state to
+approach the quantum Cramér–Rao limit.  For a pure probe state
+$\ket{\psi(\phi)}$
+\[
+F_Q(\phi)
+= 4\Bigl(\langle \partial_\phi \psi|\partial_\phi \psi\rangle - |\langle \psi|\partial_\phi \psi\rangle|^2\Bigr),
+\]
+which sets a lower bound $\mathrm{Var}(\hat\phi)\ge 1/[N F_Q(\phi)]$.
+In practice, one performs adaptive measurements and Bayesian updating
+to approach this bound ￼ ￼.  For example, given a prior distribution
+$P(\phi)$ and a measurement outcome $m$ with likelihood $P(m|\phi)$,
+Bayesian inference yields the posterior $P(\phi|m)\propto
+P(m|\phi),P(\phi)$.  Classical Fisher information for a measurement
+${p_k(\phi)}$ is
+
+\[
+F_C(\phi)=\sum_k \frac{1}{p_k(\phi)}\Bigl(\frac{\partial p_k(\phi)}{\partial \phi}\Bigr)^2,
+\]
+while the QFI is the maximal $F_C$ over all measurements .
+
+Traditional quantum control methods (GRAPE, CRAB) can optimize fixed
+sensing tasks, but become expensive or fragile for complex, noisy,
+time-dependent scenarios ￼. Machine learning offers an alternative: RL
+can train an agent to design control protocols or adaptive measurement
+policies through trial-and-error.  Recent works have demonstrated deep
+RL (policy gradients, Q-learning, cross-entropy) for quantum control
+and sensing, often exceeding conventional strategies.  For example,
+RL-optimized control pulses in a “quantum-chaotic” sensor were shown
+to reduce decoherence effects and improve sensitivity by an order of
+magnitude.  Model-aware RL (using gradient information via automatic
+differentiation) has also been applied, achieving state-of-the-art
+Bayesian experimental design across platforms. This report expands on
+these approaches for specific sensor platforms and provides practical
+guidance for experimenters.
+
+
+
 Adaptive sensing strategies based on Bayesian inference have proven
 effective in approaching quantum limits, but the design of optimal
 control and measurement policies quickly becomes intractable as the
@@ -71,12 +112,22 @@ This work surveys RL-based approaches to quantum sensing, emphasizing
 phase and field estimation and highlighting concrete implementations in
 quantum dots, trapped ions, and neutral atom systems.
 
+
+
 \section{Bayesian Updates and POMDP Formulation}
 
 Adaptive quantum sensing can be formulated as a partially observable
 Markov decision process (POMDP). The unknown parameter $\theta$ is treated
 as a hidden state, while the agent maintains a belief distribution
-$b(\theta)$ updated via Bayes' rule,
+$b(\theta)$ updated via Bayes' rule.
+The agent’s belief state is the
+Bayesian posterior $b(\theta)$ over $\theta$.  Actions $a$ correspond
+to experimental controls (choice of probe state, evolution time,
+control Hamiltonians, or measurement basis), and observations $o$ are
+measurement outcomes.  The transition dynamics are trivial (the
+parameter does not change between measurements), but each action $a$
+yields an outcome $o$ with probability $P(o|\theta,a)$. After
+observing $o$, the belief is updated via Bayes’ rule:
 \begin{equation}
 b'(\theta)=
 \frac{P(o|\theta,a)\,b(\theta)}
@@ -88,6 +139,7 @@ The reward function is typically chosen to reflect information gain or
 precision, such as the reduction in posterior variance or entropy.
 Representing the belief state explicitly converts the POMDP into a fully
 observable belief-space MDP, enabling the use of standard RL algorithms.
+
 
 \section{Fisher Information and Quantum Limits}
 
@@ -112,48 +164,186 @@ quantum-limited performance.
 
 \section{Reinforcement Learning Methods}
 
+
+
+
+
 \subsection{Model-Free Reinforcement Learning}
 
-Model-free RL methods, such as Q-learning and policy-gradient algorithms,
-treat the quantum sensor as a black box. These approaches are flexible
-and robust but often require a large number of interactions to converge.
+Model-free RL methods (e.g. Q-learning, Deep Q-Networks, Policy
+Gradient/A3C, Proximal Policy Optimization) treat the sensor as a
+black-box. The agent learns via trial outcomes and rewards, without
+explicit knowledge of the system model. Such methods can handle highly
+nonlinear, noisy dynamics and accommodate arbitrary reward functions ￼
+￼. However, they may require large numbers of episodes to converge,
+which can be a limitation in experimental settings. For example,
+earlier RL approaches to phase estimation achieved good results but
+needed many iterations ￼.
+
 
 \subsection{Model-Aware Reinforcement Learning}
 
-Model-aware RL exploits differentiable models of the sensor dynamics,
-allowing gradients to be propagated through quantum evolution and
-measurement. This significantly improves data efficiency and enables
-direct optimization of Fisher-information-based objectives.
+Model-aware RL incorporates known physics into the learning. If a
+(differentiable) model of the sensor dynamics is available, one can
+backpropagate gradients through the simulation to optimize a policy
+network. Belliardo et al. demonstrated that such gradient-based RL
+combined with particle-filter Bayesian updates can automatically
+design near-optimal experimental sequences across platforms ￼
+￼. Model-aware methods can directly optimize a reward defined in terms
+of Fisher information or estimation variance ￼. They also allow
+leveraging analytical gradients to speed up training.
+
 
 \subsection{Offline RL and Domain Randomization}
 
-Offline RL leverages pre-collected datasets, while domain randomization
-improves robustness by training policies across a distribution of noise
-and model parameters. Both techniques are essential for practical
-deployment on experimental hardware.
+Offline RL and Domain Randomization: In many quantum experiments, data
+are expensive or time-consuming to acquire. Offline RL (learning from
+a fixed dataset) can exploit pre-collected measurements or simulated
+data to train policies without active experimentation. Domain
+randomization extends this by intentionally varying simulation
+parameters (noise levels, decoherence rates, system inhomogeneities)
+during training, so that the learned policy is robust to model
+mismatch ￼ ￼. For instance, one might randomize a simulated magnetic
+field or phase shift to ensure the agent performs well under
+calibration uncertainties. While specific work on offline RL in
+quantum sensing is still emerging, these techniques from robotics and
+control could be adapted to quantum setups.
+
+
+\section{RL Implementation Blueprint}
+An actual implementation would follow these steps:
+\begin{enumerate}
+  \item {\bf Define the environment:} Choose the sensor platform and identify its controllable parameters and observables.  Build a simulation of the sensor dynamics (e.g.\ master equation or Monte Carlo) that includes the unknown parameter. If possible, validate the simulation against experiments.
+  \item {\bf State representation:} Decide what information to feed to the agent.  This may be raw data (fluorescence images, spin readouts) or pre-processed features (means and variances). Include memory of previous steps if needed (e.g.\ via recurrent networks) to handle non-Markovian effects.
+  \item {\bf Action space:} Specify the set of actions.  For continuous controls, discretization or parameterized actions can be used.  Ensure actions respect experimental limits (e.g.\ maximum pulse amplitude). 
+  \item {\bf Reward function:} Choose a reward that captures precision.  A terminal reward $R = -\log(\text{estimation variance})$ is one option.  Alternatively, use stepwise rewards like Bayesian information gain.  Regularize the reward if necessary to avoid trivial strategies.
+  \item {\bf RL algorithm:} Select an algorithm based on action type.  For example, use DQN for coarse adjustment of discrete parameters, or SAC/DDPG for smooth continuous control.  Set neural network architectures appropriate for the state (e.g.\ convolutional nets for images).
+  \item {\bf Training:} Train the agent in simulation.  Introduce variability (randomize unknowns) to encourage generalization.  Use experience replay or batch updates to improve sample efficiency.  Monitor performance on validation scenarios.
+  \item {\bf Deployment:} Transfer the trained policy to the real device.  If training was in-silico, consider fine-tuning on the hardware with a few adjustment episodes.  Include safeguards for safety (e.g.\ bounding pulses) and mechanisms to reset the environment.
+\end{enumerate}
+
+
 
 \section{Quantum Sensing Platforms}
 
 \subsection{Quantum Dot Sensors}
 
-Quantum dots serve as highly tunable charge and spin sensors. RL has been
-used to automate device tuning and could be extended to adaptive phase
-and field estimation by learning optimal gate-voltage and measurement
-protocols under realistic noise conditions.
+Semiconductor quantum dot devices can act as tunable charge or spin
+sensors for electric and magnetic fields. Double quantum dots (DQDs)
+are widely used for qubit readout and have complex stability
+diagrams. Deep RL has been applied to automate DQD measurement: Nguyen
+et al. demonstrated a DQN-based agent that rapidly locates “bias
+triangles” in a transport map of a GaAs double dot ￼. This amounts to
+learning an experimental protocol (gate voltages to apply and where to
+measure) to identify a narrow feature in a large parameter
+space. Their algorithm found triangles in minutes, far faster than
+manual tuning ￼. This approach shows that RL can replace expert
+heuristics in navigating dot operation regimes. Similar RL agents
+could be trained to adaptively measure phase shifts in a quantum dot
+interferometer or to optimize gate voltages for maximum charge
+sensitivity.
+
+In practice, one would model the dot sensor’s output $o$ (current or
+charge) as a function of the unknown parameter $\phi$ (e.g. a phase
+imposed on the electron spin) and the control voltages $a$. The agent
+then updates its belief on $\phi$ after each measurement. Since dot
+charge sensors often have limited quantum coherence, these tasks can
+often be well described as classical POMDPs, though spin qubits in
+dots could require quantum updates. The RL policy might be a neural
+network taking the current belief and possibly past history as input
+and outputting the next gate voltage configuration. Domain
+randomization can account for device variability between cooldowns.
+In short, RL offers a flexible framework for autonomous tuning and
+adaptive estimation in quantum dot sensors ￼.
+
 
 \subsection{Trapped Ion Sensors}
 
-Trapped ions offer exceptional coherence and control, making them
-ideal for precision sensing. RL agents can optimize laser pulses,
-compensation fields, and interrogation times, outperforming
-hand-designed protocols in the presence of decoherence.
+Ion traps confine individual atomic ions (e.g. Yb+, Ca+) using
+electric and/or magnetic fields. These platforms are used for quantum
+clocks, electric-field sensing, and magnetometry. The control
+parameters include laser frequencies/pulses and voltages on segmented
+electrodes. The challenges include compensating stray fields and
+designing pulse sequences under decoherence. Recent studies have
+applied ML and RL in this context. For example, Schmitz et al. used
+adaptive algorithms to optimize stray electric field compensation for
+a ^171Yb⁺ ion ￼. They compared gradient descent (ADAM) with a
+machine-learning optimizer (MLOOP) to maximize ion
+fluorescence. Starting from a nearly optimized manual setting, ADAM
+improved fluorescence by 78$\%$ and MLOOP achieved 96$\%$ ￼.  This shows
+ML’s power in high-dimensional control (44 DC electrodes) to maintain
+optimal sensor operation.
+
+In this setup, an RL agent could treat the set of compensation
+voltages and/or laser beam parameters as the action space. For
+parameter estimation (e.g. sensing a phase imprinted on the ion’s
+internal state), the agent would iteratively apply a control (like a
+rotation angle) and measure fluorescence, updating a phase
+posterior. Cross-entropy RL and policy-gradient methods have been used
+to find optimal pulse sequences in trapped-ion sensing. Schuff et
+al. demonstrated that RL (cross-entropy method) can discover
+spin-squeezing–like pulse strategies in a collective-spin ion sensor,
+outperforming simple periodic pulses ￼. Importantly, the agent learned
+to mitigate decoherence by adjusting pulse timing and strength,
+yielding up to an order-of-magnitude sensitivity gain ￼. This adaptive
+RL protocol effectively enhances the quantum Fisher information of the
+sensing scheme.
+
+In implementation, one must consider experimental constraints:
+real-time feedback bandwidth, laser noise, and ion heating. Offline RL
+or simulation-based pretraining can reduce the number of costly live
+trials. For instance, by simulating the ion’s master-equation
+dynamics, an agent can learn a policy before deployment, then
+fine-tune on the actual hardware. Domain randomization (varying
+decoherence rates or trap frequencies in simulation) can make the
+policy robust to model mismatch. Integration with ion-trap software
+(e.g. ARTIQ or custom FPGA control) allows the agent to select pulses
+or compensation voltages on the fly. Careful reward shaping
+(e.g. using reductions in state variance or improvements in
+fluorescence) will guide the RL to physically meaningful sensing
+strategies ￼ ￼.
+
 
 \subsection{Neutral Atom Sensors}
 
-Neutral atom platforms, including cold-atom interferometers and
-magnetometers, benefit from RL-driven discovery of nontraditional
-interferometric sequences. These approaches have demonstrated enhanced
-sensitivity within fixed experimental constraints.
+Neutral-atom platforms include cold-atom interferometers and
+magnetometers. Alkali vapor cells (e.g. Rb, Cs) and ultracold
+Bose–Einstein condensates (BECs) can serve as precision sensors for
+fields and acceleration. A recent cutting-edge example is using
+ultracold atoms in an optical lattice as an inertial sensor. Chih and
+Holland applied reinforcement learning to design a novel atom-lattice
+gyroscope ￼ ￼. Instead of the standard Mach–Zehnder sequence, the RL
+agent learned an end-to-end “shaking” protocol for a 2D
+lattice. Remarkably, for the same total interrogation time, the
+learned protocol achieved a 20-fold improvement in rotation
+sensitivity over conventional interferometry ￼. This demonstrates RL’s
+ability to discover non-intuitive quantum sensing schemes by
+maximizing long-term rewards.
+
+Neutral atoms also include solid-state ensembles like NV-center
+magnetometers, which can be treated similarly. An agent could
+adaptively choose microwave pulses and measurement bases to track a
+time-varying magnetic field, updating a field estimate after each
+measurement. Bayesian RL approaches (policy gradient with belief
+updates) could greatly speed up such magnetometry.
+
+On Earth, atomic ensembles in magneto-optical traps or lattice arrays
+act as vector magnetometers and clocks. Reinforcement learning can
+optimize these too: for example, an RL agent might learn how long to
+interrogate a Ramsey sequence based on the current estimate of an
+oscillating field, effectively learning adaptive control that
+approaches the quantum projection noise limit. Experiments have begun
+to implement RL for multi-atom systems; one may adapt existing RL
+toolkits (e.g. qsensoropt ￼) to these platforms. Key practical
+considerations include dealing with large particle numbers and
+decoherence. Fortunately, the notion of QFI extends to many-body
+states, and RL can be used to approach the best possible scaling
+(shot-noise or beyond). Control actions may include global phase
+shifts (via magnetic fields) and collective readout
+choices. Reinforcement learning can thus serve as a unifying framework
+for many neutral-atom sensing modalities ￼ ￼.
+
+
 
 \section{Pseudocode Examples}
 
@@ -173,12 +363,121 @@ sensitivity within fixed experimental constraints.
 \end{algorithmic}
 \end{algorithm}
 
+
+To illustrate how one might implement an RL-based adaptive estimator, we give pseudocode for two representative tasks.
+
+\begin{algorithmic}[1]
+\State \textbf{Algorithm: RL-based Adaptive Phase Estimation}
+\State {\bf Initialize} prior distribution $P(\phi)$ uniform over $[0,2\pi)$, policy network (or Q-table) $\pi$, and replay buffer (if applicable).
+\For{episode = 1 to $N_{\rm ep}$} 
+  \State Reset belief $b(\phi)\leftarrow P(\phi)$.
+  \For{step = 1 to $T$}
+    \State {\bf Action:} choose control parameter $a_t = \pi(b(\phi))$ (e.g.\ phase shift or pulse duration).
+    \State {\bf Probe:} apply $a_t$ to sensor, obtain measurement outcome $m_t\in\{0,1\}$.
+    \State {\bf Belief update:} use Bayes: $b(\phi)\propto P(m_t|\phi,a_t)\,b(\phi)$, then normalize.
+    \State {\bf Reward:} compute reward $r_t$, e.g.\ $-\mathrm{Var}_b(\phi)$ or information gain $D_{\rm KL}(b\parallel b_{\rm prior})$.
+    \State Store $(\text{state}=b(\phi),\,\text{action}=a_t,\,r=r_t,\,\text{next state}=b'(\phi))$.
+    \State Update policy $\pi$ (Q-learning or gradient step) using the transition and reward.
+  \EndFor
+\EndFor
+\end{algorithmic}
+
+The above loop exemplifies adaptive Bayesian estimation: after each
+measurement, the agent updates the posterior $b(\phi)$ and uses it as
+input for the next action.  This fully Bayesian RL approach is
+data-efficient, reusing all prior information ￼. By shaping the reward
+with estimation variance, the agent learns to drive the posterior
+toward a narrow distribution, effectively maximizing Fisher
+information.
+
+\begin{algorithmic}[1]
+\State \textbf{Algorithm: RL for Magnetic Field Estimation with NV Centers}
+\State {\bf Initialize} initial state estimate $b(B)$ (over magnetic field $B$), policy $\pi$, and environment model (optional).
+\For{episode = 1 to $N_{\rm ep}$}
+  \State Reset belief $b(B)$ to prior (e.g.\ broad Gaussian).
+  \For{step = 1 to $T$}
+    \State {\bf Action:} select control sequence $a_t$ (e.g.\ microwave pulse amplitude and duration, or Ramsey time).
+    \State {\bf Apply:} implement $a_t$ on the NV center, record photoluminescence signal $m_t$.
+    \State {\bf Likelihood:} compute $P(m_t|B,a_t)$ from the sensor model.
+    \State {\bf Belief update:} $b(B)\propto P(m_t|B,a_t)\,b(B)$.
+    \State {\bf Reward:} $r_t = -\mathrm{Var}_b(B)$ (or other metric).
+    \State Store transition and update policy $\pi$.
+  \EndFor
+\EndFor
+\end{algorithmic}
+
+In both examples, the state of the MDP is the current belief
+distribution (or a finite representation of it) and the observation is
+the latest measurement outcome.  These pseudocode sketches can be
+implemented with deep neural networks (taking a discretized belief or
+sufficient statistics as input) or simpler methods if the parameter
+space is small.  They illustrate how RL integrates control choice,
+Bayesian inference, and reward-driven learning into a closed loop.
+
+\section{Model-Free vs Model-Aware, Offline RL, Domain Randomization}
+
+We have noted that model-free RL (e.g. Q-learning) makes minimal
+assumptions but can be data-hungry.  In contrast, model-aware RL (like
+policy gradient with differentiable simulation) exploits knowledge of
+the sensor’s quantum dynamics.  For instance, Belliardo et
+al. designed a library (qsensoropt) that uses automatic
+differentiation through the Lindblad evolution and particle filter to
+train policies ￼.  Their model-aware agent directly computes gradients
+of precision metrics (Fisher information or posterior covariance) with
+respect to control parameters, yielding highly efficient training.
+
+Offline RL can leverage pre-recorded experimental data.  For example,
+one might perform a set of calibration measurements offline and train
+an RL agent on this fixed dataset.  Care must be taken to avoid
+overfitting; conservative algorithms (like Batch Constrained
+Q-learning) could be adapted. Domain randomization has been crucial in
+transferring policies from simulation to real robots; similarly, in
+quantum sensing one can randomize Hamiltonian parameters or noise
+levels during training.  This way, an RL policy learns to work under
+uncertainty (e.g. unknown decoherence rate). While specific
+demonstrations in quantum sensing are limited, these methods are
+straightforward to implement: one simply varies the simulated
+environment dynamics at the start of each training episode. Doing so
+can improve robustness when the actual device deviates from the ideal
+model.
+
+Finally, hybrid methods like Fiderer et al.’s show that evolutionary
+strategies and RL can jointly optimize adaptive heuristics ￼. In some
+cases, one could pretrain a neural network to propose near-optimal
+actions (via supervised learning on simulated “expert” data) and then
+fine-tune it with RL for final performance. This might mitigate the
+problem of sparse rewards in experimental data.
+
+
 \section{Implementation Considerations}
 
 Key practical challenges include data efficiency, reward design,
 hardware constraints, and robustness to noise and drift. Hybrid
 strategies combining simulation pretraining and experimental fine-tuning
 are likely to be essential for scalable deployment.
+
+Integrating RL with real quantum sensors requires attention to practical constraints:
+\begin{itemize}
+\item    Data Efficiency: Experiments are slow. Model-aware training in simulation is recommended, with periodic calibration on real hardware. Agents can use Gaussian process models or Bayesian surrogate models to reduce sample count.
+\item Reward Design: The reward function must reflect sensing goals. Options include negative posterior variance, log-likelihood, or information gain. Explicitly using quantum-limits (e.g. QFI) in the reward can accelerate learning ￼ ￼.
+\item Noise and Imperfections: Real measurements have technical noise, drift, and detection errors. Reward functions should penalize noisy actions. Domain randomization during training can help the agent tolerate such imperfections. One can also include a “no-update” action to handle erasure or no-fluorescence outcomes.
+\item Hardware Constraints: Action space should respect hardware limits (e.g. discrete pulse durations, limited voltage range). Use realistic simulations of the control hardware. An RL policy network or Q-table can run on real-time controllers (FPGA, GPU) to decide the next move between experimental shots.
+\item Exploration vs Exploitation: In an experimental loop, aggressive exploration can degrade performance. A safe strategy is to start with a known good protocol and let RL refine it (e.g. epsilon-greedy around a baseline). Off-policy learning from off-line data can also reduce on-the-fly exploration.
+\item Parallel Experiments: If multiple sensors or multiple runs are possible, parallel data collection can speed up training. Care must be taken if agents share a common policy to avoid correlated failures.
+\end{itemize}
+
+As a concrete example, consider calibrating an atomic magnetometer: an
+RL agent could sample at different interrogation times to build a
+field estimate. The pseudocode above shows how each measurement
+outcome would refine the field belief. One practical recipe is: (1)
+train the RL policy in a high-fidelity simulator that includes
+estimated decoherence; (2) load the policy into the experiment and run
+in “closed loop” with Bayesian updates; (3) continue occasional
+training online using real outcomes. This kind of mixed-model RL
+leverages simulations for learning efficiency but corrects for reality
+with real data.
+
+
 
 \section{Conclusion}
 
@@ -192,3 +491,25 @@ in quantum metrology.
 \bibliography{rl_quantum_sensing}
 
 \end{document}
+
+
+
+
+
+
+10. Implementation Considerations for Experiments
+
+
+11. Conclusion
+
+Reinforcement learning provides a powerful and general framework for optimizing quantum sensors. By framing phase and field estimation as POMDPs, RL agents can autonomously adapt probe settings and measurements to maximize information gain. Across platforms—from quantum dots and trapped ions to ultracold atoms—RL has enabled new adaptive protocols and control strategies ￼ ￼ ￼. Model-aware RL methods have shown particular promise, achieving or even surpassing traditional limits by leveraging quantum Fisher information ￼ ￼.  Going forward, the synergy of Bayesian estimation, Fisher-information metrics, and reinforcement learning will likely yield the next generation of high-performance quantum sensors. Physicists and engineers implementing RL in the lab should carefully consider simulation fidelity, reward engineering, and hardware constraints as outlined above.  With thoughtful integration, RL can significantly accelerate calibration and control, pushing quantum metrology closer to its ultimate limits.
+
+References
+	•	Xiao et al., “Parameter estimation in quantum sensing based on deep reinforcement learning,” npj Quantum Inf. 8, 2 (2022) ￼ ￼.
+	•	Schuff et al., “Improving the dynamics of quantum sensors with reinforcement learning,” New J. Phys. 22, 035001 (2020) ￼.
+	•	Belliardo et al., “Model-aware reinforcement learning for high-performance Bayesian experimental design in quantum metrology,” Quantum 8, 1555 (2024) ￼ ￼.
+	•	Bharti, “Fisher Information: A crucial tool for NISQ research,” Quantum Perspective 5, 61 (2021) ￼ ￼.
+	•	Nguyen et al., “Deep reinforcement learning for efficient measurement of quantum devices,” npj Quantum Inf. 7, 100 (2021) ￼.
+	•	Schmitz et al., “Dynamic compensation of stray electric fields in an ion trap using machine learning and adaptive algorithm,” Sci. Rep. 12, 20503 (2022) ￼.
+	•	Chih & Holland, “Reinforcement Learning for Rotation Sensing with Ultracold Atoms in an Optical Lattice,” arXiv 2212.14473 (2024) ￼ ￼.
+	•	Fiderer et al., “Neural-Network Heuristics for Adaptive Bayesian Quantum Estimation,” PRX Quantum 2, 020303 (2021) ￼.
