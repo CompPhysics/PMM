@@ -1,0 +1,207 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{physics}
+\usepackage{hyperref}
+
+\title{\vspace{-1.2em}
+A short rewritten note on\\
+\emph{Solving the nuclear pairing model with neural network quantum states}
+\vspace{-0.4em}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Source article:} M.~Rigo, B.~Hall, M.~Hjorth-Jensen, A.~Lovato, and F.~Pederiva,
+\emph{Phys.\ Rev.\ E} \textbf{107}, 025310 (2023).  [oai_citation:0‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+
+\vspace{0.5em}
+\noindent\textbf{Aim of this note.}
+We rewrite the article in condensed form (target: 3--4 pages) while preserving (i) the core model definitions,
+(ii) the variational Monte Carlo (VMC) method based on neural-network quantum states (NQS) in an
+occupation-number basis, and (iii) a focused discussion of the key numerical results reported in Figs.~2--4
+(training convergence and accuracy benchmarks for constant and separable pairing interactions). 
+
+\section{Problem setting and motivation}
+Pairing correlations are a central ingredient in effective nuclear interactions and strongly influence ground-state
+energies and low-energy structure. The pairing Hamiltonian is also an attractive methodological testbed: it is
+nontrivial, yet possesses integrable subclasses (Richardson--Gaudin models) that provide essentially exact
+benchmarks. The article's goal is to demonstrate that a \emph{variational}, neural-network-based solver can reproduce
+near-exact correlation energies across weak and strong coupling in a way that remains reliable when common
+approximations (MBPT, pCCD) degrade. 
+
+\section{The nuclear pairing model and exact reference solutions}
+Consider $P$ nondegenerate single-particle levels occupied by $M$ time-reversed fermion pairs. In the usual
+second-quantized form, the Hamiltonian is written as
+\begin{equation}
+H=\sum_{p,\sigma} d_p\, a_{p\sigma}^\dagger a_{p\sigma}
+-\sum_{p,q} g_{pq}\, a_{p+}^\dagger a_{p-}^\dagger a_{q-} a_{q+},
+\label{eq:H_full}
+\end{equation}
+with $d_p$ the single-particle energies and $g_{pq}$ the pairing matrix elements. It is convenient to introduce the
+pair operators $A_p^\dagger=a_{p+}^\dagger a_{p-}^\dagger$ and $A_p=a_{p-}a_{p+}$ and the pair-number operator
+$N_p=\sum_{\sigma}a_{p\sigma}^\dagger a_{p\sigma}$.
+
+Two exactly solvable cases play a central role in the benchmarks:
+\begin{itemize}
+\item \textbf{Constant-coupling pairing:} $g_{pq}=g$, giving
+\begin{equation}
+H=\sum_{p=1}^P d_p N_p - g\sum_{p,q=1}^P A_p^\dagger A_q,
+\label{eq:H_const}
+\end{equation}
+with ground-state energies obtainable from Richardson equations (coupled nonlinear equations for pair energies).  [oai_citation:1‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+
+\item \textbf{Separable (hyperbolic) pairing:} a separable interaction with an energy cutoff $\alpha$,
+\begin{equation}
+H=\sum_{p=1}^P d_p N_p -2g\sum_{p,q=1}^P \sqrt{(\alpha-d_p)(\alpha-d_q)}\,A_p^\dagger A_q,
+\label{eq:H_sep}
+\end{equation}
+which belongs to the hyperbolic Richardson--Gaudin family and is also solvable by a related set of coupled equations.  [oai_citation:2‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\end{itemize}
+
+These integrable references are used to assess accuracy beyond the small-$P$ domain of exact diagonalization.  [oai_citation:3‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+
+\section{Variational Monte Carlo with neural-network quantum states}
+\subsection{VMC in the occupation-number basis}
+VMC minimizes the Rayleigh--Ritz variational energy
+\begin{equation}
+E_V(\bm\theta)=\frac{\bra{\psi_V(\bm\theta)}H\ket{\psi_V(\bm\theta)}}{\braket{\psi_V(\bm\theta)}{\psi_V(\bm\theta)}},
+\qquad E_0\le E_V(\bm\theta),
+\label{eq:Ev}
+\end{equation}
+by varying parameters $\bm\theta$ of a trial state $\ket{\psi_V}$.
+In an occupation-number basis $\ket{\bm n}$ (here $\bm n=(n_1,\dots,n_P)$ with $n_p\in\{0,1\}$ indicating whether
+a \emph{pair} occupies level $p$), the variational amplitudes are $\psi_V(\bm n)=\braket{\bm n}{\psi_V}$.
+Configurations are sampled from
+\begin{equation}
+\mathbb{P}(\bm n)\propto \abs{\psi_V(\bm n)}^2,
+\label{eq:prob}
+\end{equation}
+and the energy estimator uses the local energy $E_L(\bm n)$.
+A practical advantage emphasized in the paper is that the occupation-number representation automatically encodes
+fermionic antisymmetry/Pauli constraints, allowing comparatively simple NQS architectures. 
+
+\subsection{Neural-network quantum state Ansatz}
+The article employs a real-valued NQS of the form
+\begin{equation}
+\psi_V(\bm n)=e^{U(\bm n)}\tanh\!\big(V(\bm n)\big),
+\label{eq:nqs}
+\end{equation}
+where $U$ and $V$ are fully connected feed-forward networks. In this parametrization, $U$ controls the magnitude,
+while $\tanh(V)$ provides a smooth representation of the sign structure. The authors typically use 2--3 hidden layers,
+$\tanh$ activations, and widths $\sim P$; they report polynomial cost for evaluating $\psi_V$ and for the overall
+algorithm (worst-case scaling summarized in the paper as $\mathcal{O}(P^4)$ once local-energy evaluation is included). 
+
+\subsection{Local energy: diagonal and pair-hopping structure}
+In the pairing Hamiltonian, off-diagonal contributions correspond to moving a pair from an occupied level to an
+unoccupied one. For a given configuration $\bm n$, only indices with $n_p=1$ and $n_q=0$ contribute, and the needed
+matrix elements can be computed by looping over occupied/unoccupied sets and evaluating $\psi_V$ on the
+configuration with $n_p\!\to 0$ and $n_q\!\to 1$. This structure keeps the Monte Carlo evaluation efficient and
+explicitly tied to the physical ``pair-scattering'' processes.  [oai_citation:4‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+
+\subsection{Training: stochastic reconfiguration with RMSProp-inspired regularization}
+To optimize $\bm\theta$, the paper uses stochastic reconfiguration (SR), a natural-gradient-like method:
+\begin{equation}
+S\,\delta\bm\theta=-\delta\tau\,\bm G,
+\label{eq:sr}
+\end{equation}
+where $\delta\tau$ is a step size, $S$ is an overlap/covariance matrix of log-derivatives, and $\bm G$ is the energy
+gradient estimator. Since the number of parameters grows with system size, explicitly storing $S$ becomes
+prohibitive; the authors therefore solve \eqref{eq:sr} with conjugate gradients, requiring only an efficient routine for
+matrix--vector products $S\bm v$. To improve stability, they introduce a small diagonal regularization inspired by
+RMSProp/Adam-style second-moment tracking (with typical diagonal-shift strengths quoted in the paper). 
+
+\section{Results and discussion of Figs.\ 2--4}
+Throughout, the paper reports \emph{correlation energies} and benchmarks VMC--NQS against exact diagonalization
+(where feasible) and against two widely used approximations: many-body perturbation theory (MBPT) and pair coupled
+cluster doubles (pCCD). 
+
+\subsection{Figure 2: convergence of SR--RMSProp training}
+Figure~2 demonstrates the optimization dynamics for the constant-coupling pairing Hamiltonian
+\eqref{eq:H_const} with $P=10$ levels and $M=5$ pairs. The plotted observable is the correlation energy versus SR
+iteration. The key points are:
+\begin{itemize}
+\item After roughly $10^3$ optimization steps, the VMC--NQS correlation energy converges to the exact-diagonalization
+value shown as a reference line.  [oai_citation:5‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\item For this representative case, the paper reports a final precision level around $10^{-7}$ in the converged correlation
+energy.  [oai_citation:6‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\fbox{\rule{0pt}{48mm}\rule{0.92\linewidth}{0pt}}
+\caption{\textbf{Placeholder for Fig.\ 2.} Training convergence of the SR--RMSProp optimization for $P=10$, $M=5$ in the
+constant-coupling pairing model: correlation energy versus optimization step, with the exact-diagonalization reference indicated.}
+\label{fig:fig2_placeholder}
+\end{figure}
+
+Conceptually, Fig.~2 validates that (i) the SR-based natural-gradient geometry is effective in the NQS manifold and
+(ii) the additional diagonal regularization yields stable convergence without sacrificing the variational character of the
+energy estimate. 
+
+\subsection{Figure 3: constant-coupling pairing---accuracy across coupling}
+Figure~3 compares correlation energies for the constant-coupling Hamiltonian \eqref{eq:H_const} at $P=10$, $M=5$ as a
+function of interaction strength $g$. Three approximations (MBPT, pCCD, VMC--NQS) are plotted against the exact
+result. The figure supports a clear regime-by-regime interpretation:
+\begin{itemize}
+\item \textbf{Weak coupling:} all methods agree closely at small $\abs{g}$, consistent with perturbative expectations.  [oai_citation:7‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\item \textbf{MBPT breakdown:} deviations from exact diagonalization become visible already around $g\approx -0.2$
+(sign convention as in the paper). This is interpreted as the inability of low-order perturbation theory to capture
+nonperturbative pairing correlations at stronger coupling.  [oai_citation:8‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\item \textbf{pCCD: initially robust, then overbinding:} pCCD remains closer down to about $g\approx -0.4$ but becomes
+significantly \emph{too low} for more negative $g$, i.e.\ it overbinds and thereby violates the variational principle.  [oai_citation:9‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\item \textbf{VMC--NQS: uniform accuracy and variational safety:} VMC--NQS tracks the exact curve across the full range
+shown (and the authors state this remains true beyond the plotted range), with discrepancies remaining below $10^{-4}$
+in the reported comparisons.  [oai_citation:10‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\fbox{\rule{0pt}{48mm}\rule{0.92\linewidth}{0pt}}
+\caption{\textbf{Placeholder for Fig.\ 3.} Constant-coupling pairing at $P=10$, $M=5$: correlation energy versus $g$ comparing
+MBPT, pCCD, and VMC--NQS with the exact-diagonalization reference.}
+\label{fig:fig3_placeholder}
+\end{figure}
+
+The main methodological message of Fig.~3 is that enforcing a \emph{variational} optimization over a flexible NQS
+ansatz yields a solver that remains reliable precisely where MBPT and pCCD lose quantitative control. 
+
+\subsection{Figure 4: separable (hyperbolic RG) pairing---near-exact agreement and failure modes}
+Figure~4 repeats the benchmark for the separable Hamiltonian \eqref{eq:H_sep} with $P=10$, $M=5$ and cutoff $\alpha=10$.
+The paper reports the following sharp contrasts:
+\begin{itemize}
+\item \textbf{Exact diagonalization vs VMC--NQS:} the two curves overlap over the entire displayed range of coupling
+strength; in some cases the agreement reaches about eight significant digits. 
+\item \textbf{MBPT:} accurate only for very small coupling; deviations grow quickly as the interaction increases.  [oai_citation:11‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\item \textbf{pCCD: early deviation and abrupt variational violations:} pCCD begins to deviate from the exact result already
+for $g\gtrsim 0.06$ and shows abrupt, unphysical behavior consistent with severe variational-principle violations.  [oai_citation:12‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\fbox{\rule{0pt}{48mm}\rule{0.92\linewidth}{0pt}}
+\caption{\textbf{Placeholder for Fig.\ 4.} Separable (hyperbolic RG) pairing at $P=10$, $M=5$, $\alpha=10$: correlation energy
+versus coupling strength comparing MBPT, pCCD, and VMC--NQS with exact diagonalization.}
+\label{fig:fig4_placeholder}
+\end{figure}
+
+The separable model is particularly informative because it is still integrable but can mimic realistic pairing patterns
+used to approximate more sophisticated interactions. In this setting, Fig.~4 highlights that the NQS representation
+can faithfully encode complicated correlation structures without the systematic breakdown seen in standard
+approximations at moderate-to-strong coupling. 
+
+\section{Conclusions and outlook (condensed)}
+The paper establishes that VMC in an occupation-number basis with a compact NQS ansatz can solve integrable nuclear
+pairing Hamiltonians with near-exact accuracy over a wide coupling range, while maintaining the variational bound by
+construction. The SR--RMSProp optimization provides stable convergence (Fig.~2), and the benchmarks against exact
+diagonalization show that VMC--NQS remains accurate where MBPT and pCCD deviate or violate variationality
+(Figs.~3--4). 
+
+Beyond the showcased $P=10$ examples, the article also reports broader tests and argues that the approach exhibits
+polynomial scaling in $P$, motivating extensions to nonseparable, state-dependent pairing interactions (e.g.\ Gogny-like)
+and to larger shell-model Hamiltonians where exact diagonalization is infeasible. 
+
+\end{document}
