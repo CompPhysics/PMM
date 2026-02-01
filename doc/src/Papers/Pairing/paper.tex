@@ -1,37 +1,16 @@
-\documentclass[11pt]{article}
-
-\usepackage[a4paper,margin=2.3cm]{geometry}
-\usepackage{amsmath,amssymb,bm}
-\usepackage{physics}
-\usepackage{hyperref}
-
-\title{\vspace{-1.2em}
-A short rewritten note on\\
-\emph{Solving the nuclear pairing model with neural network quantum states}
-\vspace{-0.4em}}
-\author{}
-\date{}
-
-\begin{document}
-\maketitle
-
-\noindent\textbf{Source article:} M.~Rigo, B.~Hall, M.~Hjorth-Jensen, A.~Lovato, and F.~Pederiva,
-\emph{Phys.\ Rev.\ E} \textbf{107}, 025310 (2023).  [oai_citation:0‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
-
-\vspace{0.5em}
-\noindent\textbf{Aim of this note.}
-We rewrite the article in condensed form (target: 3--4 pages) while preserving (i) the core model definitions,
-(ii) the variational Monte Carlo (VMC) method based on neural-network quantum states (NQS) in an
-occupation-number basis, and (iii) a focused discussion of the key numerical results reported in Figs.~2--4
-(training convergence and accuracy benchmarks for constant and separable pairing interactions). 
 
 \section{Problem setting and motivation}
-Pairing correlations are a central ingredient in effective nuclear interactions and strongly influence ground-state
-energies and low-energy structure. The pairing Hamiltonian is also an attractive methodological testbed: it is
-nontrivial, yet possesses integrable subclasses (Richardson--Gaudin models) that provide essentially exact
-benchmarks. The article's goal is to demonstrate that a \emph{variational}, neural-network-based solver can reproduce
-near-exact correlation energies across weak and strong coupling in a way that remains reliable when common
-approximations (MBPT, pCCD) degrade. 
+
+Pairing correlations are a central ingredient in effective nuclear
+interactions and strongly influence ground-state energies and
+low-energy structure. The pairing Hamiltonian is also an attractive
+methodological testbed: it is nontrivial, yet possesses integrable
+subclasses (Richardson--Gaudin models) that provide essentially exact
+benchmarks. The article's goal is to demonstrate that a
+\emph{variational}, neural-network-based solver can reproduce
+near-exact correlation energies across weak and strong coupling in a
+way that remains reliable when common approximations (MBPT, pCCD)
+degrade.
 
 \section{The nuclear pairing model and exact reference solutions}
 Consider $P$ nondegenerate single-particle levels occupied by $M$ time-reversed fermion pairs. In the usual
@@ -52,17 +31,17 @@ Two exactly solvable cases play a central role in the benchmarks:
 H=\sum_{p=1}^P d_p N_p - g\sum_{p,q=1}^P A_p^\dagger A_q,
 \label{eq:H_const}
 \end{equation}
-with ground-state energies obtainable from Richardson equations (coupled nonlinear equations for pair energies).  [oai_citation:1‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+with ground-state energies obtainable from Richardson equations (coupled nonlinear equations for pair energies).
 
 \item \textbf{Separable (hyperbolic) pairing:} a separable interaction with an energy cutoff $\alpha$,
 \begin{equation}
 H=\sum_{p=1}^P d_p N_p -2g\sum_{p,q=1}^P \sqrt{(\alpha-d_p)(\alpha-d_q)}\,A_p^\dagger A_q,
 \label{eq:H_sep}
 \end{equation}
-which belongs to the hyperbolic Richardson--Gaudin family and is also solvable by a related set of coupled equations.  [oai_citation:2‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+which belongs to the hyperbolic Richardson--Gaudin family and is also solvable by a related set of coupled equations. 
 \end{itemize}
 
-These integrable references are used to assess accuracy beyond the small-$P$ domain of exact diagonalization.  [oai_citation:3‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+These integrable references are used to assess accuracy beyond the small-$P$ domain of exact diagonalization. 
 
 \section{Variational Monte Carlo with neural-network quantum states}
 \subsection{VMC in the occupation-number basis}
@@ -100,7 +79,7 @@ In the pairing Hamiltonian, off-diagonal contributions correspond to moving a pa
 unoccupied one. For a given configuration $\bm n$, only indices with $n_p=1$ and $n_q=0$ contribute, and the needed
 matrix elements can be computed by looping over occupied/unoccupied sets and evaluating $\psi_V$ on the
 configuration with $n_p\!\to 0$ and $n_q\!\to 1$. This structure keeps the Monte Carlo evaluation efficient and
-explicitly tied to the physical ``pair-scattering'' processes.  [oai_citation:4‡PhysRevE.107.025310.pdf](sediment://file_000000004b0071f49d1ba30ac6b821dd)
+explicitly tied to the physical ``pair-scattering'' processes. 
 
 \subsection{Training: stochastic reconfiguration with RMSProp-inspired regularization}
 To optimize $\bm\theta$, the paper uses stochastic reconfiguration (SR), a natural-gradient-like method:
@@ -203,5 +182,3 @@ diagonalization show that VMC--NQS remains accurate where MBPT and pCCD deviate 
 Beyond the showcased $P=10$ examples, the article also reports broader tests and argues that the approach exhibits
 polynomial scaling in $P$, motivating extensions to nonseparable, state-dependent pairing interactions (e.g.\ Gogny-like)
 and to larger shell-model Hamiltonians where exact diagonalization is infeasible. 
-
-\end{document}
