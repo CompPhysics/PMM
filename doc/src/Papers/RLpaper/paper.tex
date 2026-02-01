@@ -513,3 +513,151 @@ References
 	•	Schmitz et al., “Dynamic compensation of stray electric fields in an ion trap using machine learning and adaptive algorithm,” Sci. Rep. 12, 20503 (2022) ￼.
 	•	Chih & Holland, “Reinforcement Learning for Rotation Sensing with Ultracold Atoms in an Optical Lattice,” arXiv 2212.14473 (2024) ￼ ￼.
 	•	Fiderer et al., “Neural-Network Heuristics for Adaptive Bayesian Quantum Estimation,” PRX Quantum 2, 020303 (2021) ￼.
+
+
+
+
+
+Reinforcement learning for quantum sensing (pulse and trap optimization)
+
+Optimizing control parameters (pulse sequences, trap potentials) for
+an electron-spin sensor can be framed as an RL problem: the agent’s
+action selects a set of control parameters for each measurement cycle,
+the environment is the known spin-Hamiltonian and its evolution
+(including measurements), and the reward is a figure of merit related
+to estimation precision (e.g. the quantum Fisher information or
+inverse phase-estimation variance).  By training in simulation (the
+full Hamiltonian is known), the agent learns policies that maximize
+sensitivity to unknown phase/magnetic-field parameters.  In practice,
+one can set the reward to the Fisher information {\it per} cycle or
+the expected precision after Bayesian updating (Cramér–Rao bound) and
+train the policy to maximize it.
+
+Model-based vs. model-free RL in quantum control
+
+Since the Hamiltonian is fully known, model-based (model-aware) RL is
+particularly well suited.  In model-based RL the agent leverages a
+simulator or differentiable model of the quantum dynamics to plan and
+evaluate actions.  This can drastically improve efficiency and
+performance.  For example, Belliardo et al. introduce a model-aware RL
+framework for quantum metrology, where the known Hamiltonian is
+encoded in a differentiable simulation.  The agent’s policy network
+receives a summary of the current parameter posterior and outputs
+control parameters (pulse/trap settings) for the next cycle; the
+quantum probe evolves and is measured; then a particle filter updates
+the posterior.  Crucially, by differentiating through this loop
+(including the non-differentiable measurement via clever Monte Carlo
+techniques), one can compute gradients of the sensor’s precision
+(Fisher information or Bayesian estimator variance) with respect to
+the controls ￼ ￼.  This “feedback GRAPE”–style approach lets the
+policy be trained end-to-end to minimize the Cramér–Rao bound or
+maximize QFI.  In practice, Belliardo et al. show that this
+model-aware, gradient-based RL consistently outperforms model-free
+methods on adaptive sensing tasks ￼, yielding higher-precision
+strategies.  (They report state-of-the-art adaptive measurement
+protocols for NV-center magnetometry and other platforms ￼ ￼.)
+
+Figure: Example of a model-aware RL measurement loop (from Belliardo et al.) ￼.  The agent network (pink) takes a summary of the current Bayesian posterior and outputs control parameters $x$ (e.g. pulse shapes or trap voltages).  The quantum probe (green) evolves under those controls and is projectively measured, yielding an outcome $y$.  A particle-filter (yellow) updates the posterior $P(\theta|y,x)$ (not shown) for the unknown parameter $\theta$ (e.g. field amplitude).  By differentiating through this loop, the agent directly optimizes estimation precision (Fisher information) via automatic differentiation ￼ ￼.
+
+In contrast, model-free RL treats the sensor as a black-box.  One
+repeatedly simulates (or experiments with) different control sequences
+and optimizes the policy by trial and error.  This approach has also
+been applied to quantum sensors. For example, Cooke & Czischek (2025)
+trained a Soft Actor-Critic (SAC) agent on a simulated spin-½
+magnetometer: the agent learned transverse-field pulse sequences that
+maximize the precision of a field measurement ￼.  These model-free
+agents generalized well across parameter variations, but require many
+training episodes.  Model-free RL can work without knowing the exact
+model, but generally needs far more samples.  In domains where the
+Hamiltonian is known (as here), model-based approaches can give
+orders-of-magnitude gains in sample efficiency.  For instance, Khalid
+et al. (2023) embed a partially known Hamiltonian into a Soft
+Actor-Critic loop via a learnable neural-ODE model; they report
+roughly a 10× reduction in training interactions (episodes) needed to
+achieve high-fidelity gate control, compared to a model-free baseline
+￼ ￼.  Their “LH-MBSAC” algorithm uses a differentiable ODE for the
+propagator and learns any unknown static Hamiltonian terms, leveraging
+known control Hamiltonians ￼ ￼.  In practice, one can then even refine
+the RL solution with classical gradient methods (e.g. GRAPE) using the
+learned model ￼.  These results highlight that when a trustworthy
+model is available, model-based RL can drastically improve efficiency
+and performance in quantum control.
+
+RL problem formulation for phase/field sensitivity
+
+The RL environment can be constructed as a sequential decision process
+over repeated measurement cycles.  For example, the state could
+include the current experiment time-step and (in an adaptive scheme)
+the current posterior over the unknown parameter.  The action is a set
+of control values: pulse amplitudes, durations, and trap potential
+settings.  The system evolves under the known Hamiltonian
+$H(\mathbf{u}(t))$, and at the end of the pulse sequence a projective
+measurement is performed.  One then computes a reward: natural choices
+include the quantum Fisher information (QFI) of the final state with
+respect to the unknown parameter, or the negative variance (inverse
+MSE) of an estimator after that cycle.  Alternatively, in a Bayesian
+setting the reward can be the log-likelihood improvement or reduction
+in expected estimation error ￼ ￼.  By training the agent to maximize
+this reward, it effectively maximizes measurement sensitivity over
+many cycles.
+
+Using QFI or the Cramér–Rao bound as the objective ties directly to
+standard metrology theory.  For instance, Marrder et al. (DAMOP 2024)
+explicitly train an RL agent to maximize quantum Fisher information
+for a spin qubit sensing an oscillating field.  In their setup a qubit
+sees a sinusoidal magnetic field of unknown amplitude and frequency.
+The agent designs a sequence of instantaneous pulses that, averaged
+over a band of possible frequencies, maximizes the QFI with respect to
+the field amplitude ￼.  This directly improves precision in estimating
+that amplitude (useful in axion-search experiments).  In a second
+scenario the same authors had an agent find pulses that minimize
+decoherence of a qubit coupled to an environment ￼.  These examples
+show that RL can target Fisher-information-based metrics: one simply
+defines the reward accordingly (e.g. the QFI after the pulse sequence,
+or a proxy for the Cramér–Rao bound) and lets the policy search for
+controls that maximize it.
+
+Model-based RL approaches for quantum control
+
+Model-based RL can be implemented in several ways for quantum control: one can either simulate gradients through the Schrödinger/Heisenberg evolution, or learn a compact predictive model for planning.  Key techniques include:
+	•	Differentiable programming (auto-diff): directly use the known Hamiltonian in a computational graph.  In effect, one performs gradient-ascent on QFI via backpropagation through time (similar to GRAPE but framed as RL).  This is what Belliardo et al. do with automatic differentiation through the sensing loop ￼.
+	•	Neural-ODE models: treat the Schrödinger equation as a neural ordinary differential equation.  Khalid et al. encode the unknown Hamiltonian parameters into a neural-ODE model which is trained from data, then use SAC planning on that model ￼ ￼.  The model’s differentiability enables both planning and gradient-based updates of policy.
+	•	Hybrid strategies: combine RL with classical optimal control.  For example, one can use RL to find a good control policy and then refine it with gradient methods (or vice versa) ￼.
+
+These model-based methods exploit the physics.  They typically yield sample efficiency: for a fully known model one can generate unlimited simulated experience at low cost.  For instance, the QSensorOpt library (Belliardo et al.) implements exactly this idea for NV centers, optical cavities, etc., and finds globally optimal adaptive strategies for static magnetic field estimation by optimizing a Fisher-information loss ￼ ￼.
+
+Model-free RL approaches
+
+If one forgoes the model, standard deep RL methods can still be applied. Continuous control of pulses/traps suggests actor-critic or policy-gradient methods: e.g. Soft Actor-Critic (SAC) or Proximal Policy Optimization (PPO) are popular.  Indeed, Cooke & Czischek trained an SAC agent on a continuous spin-½ model and successfully optimized field-sensing pulses ￼.  On-policy methods like PPO or TRPO could likewise be used; they offer stability when rewards are sparse or stochastic.  Value-based methods (DQN, deep Q-learning) require discretizing the control space, but Zhang et al. show that deep Q-learning can outperform gradient methods when such discretization is natural ￼.  (In their study of qubit state control, they found deep Q-learning and policy-gradient RL outperformed classical Krotov/SGD approaches under discretization ￼.)
+
+In practice, one chooses RL algorithms by the problem structure:
+	•	Continuous vs discrete actions: Pulses and trap voltages are naturally continuous, favoring actor-critic methods (SAC, PPO, DDPG).  Discretization (time-binned pulses) would allow Q-learning.
+	•	On-policy vs off-policy: Off-policy (SAC, DDPG) can reuse data and be more sample-efficient; on-policy (PPO, TRPO) can better handle non-stationary or highly stochastic rewards.
+	•	Exploration vs model accuracy: If the model is trusted, one can bias the agent (e.g. initialize near known good protocols).  If unknown noise or drift is a concern, model-free exploration can adapt to unmodeled effects.
+
+A partial summary of algorithms from the literature:
+	•	Soft Actor-Critic (SAC) – widely used for quantum control.  (Cooke & Czischek 2025 use SAC for magnetometry ￼; Khalid et al. 2023 use a model-based version of SAC ￼.)
+	•	Policy Gradient / PPO / TRPO – robust gradient-based methods.  They have been used in many control tasks (e.g. Zhang et al. found policy gradients effective ￼) and could be applied to pulse scheduling.
+	•	Deep Q-Learning (DQN) – for discretized pulses, known to work well as problem size grows ￼.
+	•	Model-Based Planning (MBPO, Dyna, etc.) – e.g. Dreamer or MBPO-like methods could be adapted: they learn a world model from data, then plan with it.  In the quantum context, this is akin to learning an approximate Hamiltonian model and planning.  (Khalid et al. effectively implement this via a neural ODE world model ￼.)
+	•	Bayesian/Adaptive RL – algorithms that incorporate a belief state (e.g. particle filter state) into the decision.  Belliardo’s approach is an example: the agent policy is a neural net that takes as input the Bayesian posterior (via particles) and outputs controls ￼.
+
+Examples from recent literature
+	•	Belliardo et al. (Quantum 2024) – Model-aware Bayesian RL for quantum metrology.  They optimize precision directly (via Bayesian update and QFI) by differentiating through the measurement loop ￼ ￼.  The trained policies outperformed model-free baselines, yielding near-optimal precision.  This work provides an open-source framework (qsensoropt) demonstrating model-based RL on NV-center, photonic, and cavity sensors ￼ ￼.  It explicitly shows optimization of the Cramér–Rao bound (Fisher information) with RL ￼.
+	•	Marrder et al. (DAMOP 2024) – RL for pulse sequences maximizing QFI.  They use a model-free deep RL agent to find pulses that maximize the quantum Fisher information for estimating the amplitude of a sinusoidal magnetic field ￼.  This is a concrete example of framing metrology (axion detection) as an RL task with a QFI objective ￼.  They also demonstrate RL to minimize decoherence for a qubit sensor, showing the flexibility of the approach.
+	•	Cooke & Czischek (PRA, accepted 2025) – SAC for spin-magnetometer control.  This work applies a Soft Actor-Critic agent to a single-spin magnetometer model. The agent learns a sequence of transverse-field pulses that optimize magnetic-field estimation precision ￼.  They show the policy generalizes to unseen Hamiltonian parameters and outperforms standard open-loop strategies.  Although model-free, this shows RL can effectively tackle realistic sensing tasks under decoherence ￼.
+	•	Khalid et al. (PRResearch 2023) – Model-based RL with a learnable Hamiltonian.  Although focused on gate-fidelity tasks, this work is directly relevant.  They encode a partially known spin Hamiltonian into a neural ODE model and train an SAC agent on it. The result is an order-of-magnitude reduction in required training data versus model-free RL ￼.  This sample efficiency is crucial for experiments.  Their learned model can be used for further gradient-based pulse optimization (GRAPE) after RL ￼.
+	•	Abedi & Schmitt (arXiv 2025) – RL for entangling spin-qubit gates.  They use a model-free deep RL agent to find high-fidelity entangling protocols for semiconductor spin qubits under realistic constraints (noise, rise times).  While focused on gate synthesis, it exemplifies using RL for electron-spin control ￼.
+	•	Zhang et al. (npjQI 2019) – Comparative study of RL vs classical control.  This work shows that modern RL methods (deep Q-learning, policy gradients) can outperform traditional gradient-based algorithms (GRAPE, Krotov) for qubit state control under certain conditions (e.g. when control is discretized) ￼.  It highlights that RL can discover short, efficient pulse sequences that improve fidelity, which is encouraging for its use in metrology tasks as well.
+
+In summary, recent literature demonstrates that both model-free and
+model-based RL can be successfully applied to quantum sensing/control.
+Model-based RL in particular offers advantages when the system is
+well-characterized: by using the full Hamiltonian simulation and
+gradients, it achieves much greater sample efficiency and precision ￼
+￼.  Model-free RL (e.g. SAC/PPO) remains a viable fallback and has
+been shown to work in similar control scenarios ￼ ￼.  Designing the RL
+reward around the quantum Fisher information or estimation error makes
+the connection to metrology explicit, and several works (cited above)
+have demonstrated that RL agents can indeed maximize QFI or minimize
+the Cramér–Rao bound in practice.
