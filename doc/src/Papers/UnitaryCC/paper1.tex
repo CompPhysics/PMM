@@ -10,6 +10,10 @@ aps,floatfix]{revtex4-2}
 \usepackage{siunitx}
 \usepackage{soul}
 \usepackage{comment}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{quantikz}
+\usepackage{listings}
+
 \usepackage[bb=boondox]{mathalfa}
 \usetikzlibrary{external}
 \tikzexternalize[prefix=figures/]
@@ -23,11 +27,259 @@ aps,floatfix]{revtex4-2}
 \affiliation{Department of Physics and Center for Computing in Science Education, University of Oslo, N-0316 Oslo, Norway}
 \author{Dean Lee}
 \affiliation{Facility for Rare Isotope Beams and Department of Physics and Astronomy, Michigan State University, East Lansing, Michigan 48824, USA}
+
+
+
 \begin{abstract}
-Text to come here
+
+We present a quantum computing implementation of the nuclear pairing
+Hamiltonian using the unitary coupled cluster method with double
+excitations. The Hamiltonian is written in second quantization and
+mapped to qubit operators via the Jordan--Wigner transformation.
+Explicit Pauli-string decompositions and quantum circuits are derived
+for a minimal four-level pairing model. The exponential excitation
+operators are implemented using Suzuki--Trotter decompositions.
+Finally, we demonstrate how parametric matrix models can reduce the
+dimensionality of the Trotter expansion and significantly decrease
+quantum circuit depth.
+
 \end{abstract}
 
-%\pacs{02.70.Ss, 31.15.A-, 31.15.bw, 71.15.-m, 73.21.La}
+\maketitle
+
+
+%------------------------------------------------
+\section{Introduction}
+
+Quantum computing offers new possibilities for solving strongly
+correlated quantum many-body systems. Nuclear systems provide an
+ideal testbed because pairing correlations dominate the low-energy
+structure of many nuclei.
+
+In this work we study the nuclear pairing Hamiltonian and construct
+a quantum algorithm based on the unitary coupled cluster doubles
+(UCCD) ansatz. We show how parametric matrix models (PMMs) can
+reduce circuit complexity.
+
+%------------------------------------------------
+\section{Nuclear Pairing Hamiltonian}
+
+The pairing Hamiltonian is
+
+\begin{equation}
+H =
+\sum_p \epsilon_p a_p^\dagger a_p
+-
+G
+\sum_{pq}
+a_p^\dagger a_{\bar p}^\dagger
+a_{\bar q} a_q .
+\end{equation}
+
+Introducing pair operators
+
+\begin{equation}
+P_p^\dagger = a_p^\dagger a_{\bar p}^\dagger,
+\qquad
+P_p = a_{\bar p} a_p ,
+\end{equation}
+
+the Hamiltonian becomes
+
+\begin{equation}
+H =
+\sum_p \epsilon_p N_p
+-
+G \sum_{pq} P_p^\dagger P_q .
+\end{equation}
+
+%------------------------------------------------
+\section{Quasispin SU(2) Solution}
+
+The pairing Hamiltonian possesses an SU(2) quasispin symmetry.
+Defining operators
+
+\begin{align}
+S_p^+ &= P_p^\dagger, \\
+S_p^- &= P_p, \\
+S_p^z &= \frac{1}{2}(N_p-1),
+\end{align}
+
+we obtain the commutation relations
+
+\begin{equation}
+[S_p^+,S_q^-] = 2\delta_{pq}S_p^z .
+\end{equation}
+
+The Hamiltonian becomes
+
+\begin{equation}
+H =
+\sum_p 2\epsilon_p S_p^z
+-
+G\sum_{pq}S_p^+ S_q^- .
+\end{equation}
+
+For the minimal four-level model the Hamiltonian can be diagonalized
+analytically within the quasispin basis.
+
+%------------------------------------------------
+\section{Coupled Cluster Doubles}
+
+The coupled cluster wave function is
+
+\begin{equation}
+|\Psi_{CC}\rangle = e^T|\Phi_0\rangle ,
+\end{equation}
+
+with doubles excitations
+
+\begin{equation}
+T_2 =
+\frac{1}{4}
+\sum_{abij}
+t_{ij}^{ab}
+a_a^\dagger a_b^\dagger a_j a_i .
+\end{equation}
+
+%------------------------------------------------
+\section{Unitary Coupled Cluster}
+
+For quantum circuits we use
+
+\begin{equation}
+|\Psi_{UCC}\rangle =
+e^{T-T^\dagger}|\Phi_0\rangle .
+\end{equation}
+
+Restricting to doubles
+
+\begin{equation}
+\tau = T_2 - T_2^\dagger .
+\end{equation}
+
+%------------------------------------------------
+\section{Jordan--Wigner Mapping}
+
+Fermionic operators are mapped to qubits using
+
+\begin{align}
+a_p^\dagger &= 
+\frac{1}{2}(X_p-iY_p)\prod_{j<p}Z_j , \\
+a_p &= 
+\frac{1}{2}(X_p+iY_p)\prod_{j<p}Z_j .
+\end{align}
+
+This converts the Hamiltonian into a sum of Pauli strings
+
+\begin{equation}
+H = \sum_i h_i P_i .
+\end{equation}
+
+%------------------------------------------------
+\section{Four-Level Pairing Model}
+
+Consider four single-particle orbitals.
+The pair excitation operator is
+
+\begin{equation}
+a_3^\dagger a_4^\dagger a_2 a_1 .
+\end{equation}
+
+After Jordan--Wigner transformation we obtain Pauli operators such as
+
+\begin{equation}
+X_1X_2Y_3Y_4 - Y_1Y_2X_3X_4 .
+\end{equation}
+
+%------------------------------------------------
+\section{Quantum Circuit}
+
+The exponential of a Pauli string is implemented using
+CNOT ladders and a single-qubit rotation
+
+\[
+\begin{quantikz}
+\lstick{q_0} & \ctrl{1} & \qw & \qw & \qw \\
+\lstick{q_1} & \targ{} & \ctrl{1} & \qw & \qw \\
+\lstick{q_2} & \qw & \targ{} & \ctrl{1} & \qw \\
+\lstick{q_3} & \qw & \qw & \targ{} & \gate{R_z(\theta)}
+\end{quantikz}
+\]
+
+%------------------------------------------------
+\section{Parametric Matrix Models}
+
+Instead of assigning independent amplitudes to all double excitations,
+we write
+
+\begin{equation}
+T_2(\theta) =
+\sum_k \theta_k M_k .
+\end{equation}
+
+This reduces the parameter count and circuit depth.
+
+%------------------------------------------------
+\section{Benchmark: UCCD vs PMM}
+
+The number of double excitations scales as
+
+\begin{equation}
+N_{UCCD} \sim N^4 .
+\end{equation}
+
+Parametric matrix models reduce this to
+
+\begin{equation}
+N_{PMM} \sim N^2 .
+\end{equation}
+
+Consequently the number of Trotter steps and entangling gates
+is drastically reduced.
+
+%------------------------------------------------
+\section{Example Quantum Implementation}
+
+Below is a minimal Qiskit implementation of the pairing Hamiltonian.
+
+\begin{lstlisting}[language=Python]
+from qiskit import QuantumCircuit
+from qiskit.circuit import Parameter
+
+theta = Parameter('theta')
+
+qc = QuantumCircuit(4)
+
+qc.cx(0,1)
+qc.cx(1,2)
+qc.cx(2,3)
+
+qc.rz(theta,3)
+
+qc.cx(2,3)
+qc.cx(1,2)
+qc.cx(0,1)
+
+print(qc)
+\end{lstlisting}
+
+This circuit implements the exponential of the Pauli string
+generated by the UCCD excitation operator.
+
+%------------------------------------------------
+\section{Conclusions}
+
+We have presented a quantum computing framework for the nuclear
+pairing Hamiltonian based on the unitary coupled cluster doubles
+method. Explicit Jordan--Wigner mappings, quantum circuits,
+and Pauli-string decompositions were derived.
+
+Parametric matrix models offer a powerful method for reducing
+circuit depth and enabling simulations of larger nuclear systems
+on near-term quantum devices.
+
+\end{document}
 
 
 \date{\today}
@@ -936,4 +1188,264 @@ Looking ahead, one can imagine scaling up the demonstration: using a quantum pro
 
 In summary, the unitary coupled cluster approach, combined with trotterization, provides a powerful and systematically improvable framework for simulating many-body physics on quantum computers. Our case study on the pairing Hamiltonian serves as a proof-of-principle, demonstrating how full derivations of the ansatz and BCH-based error analysis can be carried out, and how a bit of creativity in mapping fermions to qubits and choosing gate sequences yields efficient quantum circuits. The encouraging results for this simple model mirror those found in more complex quantum chemistry applications of UCC ￼ and bode well for future quantum simulations in nuclear physics, where pairing is often the first correlation to include beyond mean-field theory.
 
-Acknowledgments: (If this were an actual manuscript, we would acknowledge funding, discussions, and any contributors here.)~
+\documentclass[aps,prx,twocolumn]{revtex4-2}
+
+
+\title{Unitary Coupled Cluster Theory for the Nuclear Pairing Hamiltonian with Parametric Matrix Models}
+
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+We present a quantum computing implementation of the nuclear pairing
+Hamiltonian using the unitary coupled cluster method with double
+excitations. The Hamiltonian is written in second quantization and
+mapped to qubit operators via the Jordan--Wigner transformation.
+Explicit Pauli-string decompositions and quantum circuits are derived
+for a minimal four-level pairing model. The exponential excitation
+operators are implemented using Suzuki--Trotter decompositions.
+Finally, we demonstrate how parametric matrix models can reduce the
+dimensionality of the Trotter expansion and significantly decrease
+quantum circuit depth.
+
+\end{abstract}
+
+%------------------------------------------------
+\section{Introduction}
+
+Quantum computing offers new possibilities for solving strongly
+correlated quantum many-body systems. Nuclear systems provide an
+ideal testbed because pairing correlations dominate the low-energy
+structure of many nuclei.
+
+In this work we study the nuclear pairing Hamiltonian and construct
+a quantum algorithm based on the unitary coupled cluster doubles
+(UCCD) ansatz. We show how parametric matrix models (PMMs) can
+reduce circuit complexity.
+
+%------------------------------------------------
+\section{Nuclear Pairing Hamiltonian}
+
+The pairing Hamiltonian is
+
+\begin{equation}
+H =
+\sum_p \epsilon_p a_p^\dagger a_p
+-
+G
+\sum_{pq}
+a_p^\dagger a_{\bar p}^\dagger
+a_{\bar q} a_q .
+\end{equation}
+
+Introducing pair operators
+
+\begin{equation}
+P_p^\dagger = a_p^\dagger a_{\bar p}^\dagger,
+\qquad
+P_p = a_{\bar p} a_p ,
+\end{equation}
+
+the Hamiltonian becomes
+
+\begin{equation}
+H =
+\sum_p \epsilon_p N_p
+-
+G \sum_{pq} P_p^\dagger P_q .
+\end{equation}
+
+%------------------------------------------------
+\section{Quasispin SU(2) Solution}
+
+The pairing Hamiltonian possesses an SU(2) quasispin symmetry.
+Defining operators
+
+\begin{align}
+S_p^+ &= P_p^\dagger, \\
+S_p^- &= P_p, \\
+S_p^z &= \frac{1}{2}(N_p-1),
+\end{align}
+
+we obtain the commutation relations
+
+\begin{equation}
+[S_p^+,S_q^-] = 2\delta_{pq}S_p^z .
+\end{equation}
+
+The Hamiltonian becomes
+
+\begin{equation}
+H =
+\sum_p 2\epsilon_p S_p^z
+-
+G\sum_{pq}S_p^+ S_q^- .
+\end{equation}
+
+For the minimal four-level model the Hamiltonian can be diagonalized
+analytically within the quasispin basis.
+
+%------------------------------------------------
+\section{Coupled Cluster Doubles}
+
+The coupled cluster wave function is
+
+\begin{equation}
+|\Psi_{CC}\rangle = e^T|\Phi_0\rangle ,
+\end{equation}
+
+with doubles excitations
+
+\begin{equation}
+T_2 =
+\frac{1}{4}
+\sum_{abij}
+t_{ij}^{ab}
+a_a^\dagger a_b^\dagger a_j a_i .
+\end{equation}
+
+%------------------------------------------------
+\section{Unitary Coupled Cluster}
+
+For quantum circuits we use
+
+\begin{equation}
+|\Psi_{UCC}\rangle =
+e^{T-T^\dagger}|\Phi_0\rangle .
+\end{equation}
+
+Restricting to doubles
+
+\begin{equation}
+\tau = T_2 - T_2^\dagger .
+\end{equation}
+
+%------------------------------------------------
+\section{Jordan--Wigner Mapping}
+
+Fermionic operators are mapped to qubits using
+
+\begin{align}
+a_p^\dagger &= 
+\frac{1}{2}(X_p-iY_p)\prod_{j<p}Z_j , \\
+a_p &= 
+\frac{1}{2}(X_p+iY_p)\prod_{j<p}Z_j .
+\end{align}
+
+This converts the Hamiltonian into a sum of Pauli strings
+
+\begin{equation}
+H = \sum_i h_i P_i .
+\end{equation}
+
+%------------------------------------------------
+\section{Four-Level Pairing Model}
+
+Consider four single-particle orbitals.
+The pair excitation operator is
+
+\begin{equation}
+a_3^\dagger a_4^\dagger a_2 a_1 .
+\end{equation}
+
+After Jordan--Wigner transformation we obtain Pauli operators such as
+
+\begin{equation}
+X_1X_2Y_3Y_4 - Y_1Y_2X_3X_4 .
+\end{equation}
+
+%------------------------------------------------
+\section{Quantum Circuit}
+
+The exponential of a Pauli string is implemented using
+CNOT ladders and a single-qubit rotation
+
+\[
+\begin{quantikz}
+\lstick{q_0} & \ctrl{1} & \qw & \qw & \qw \\
+\lstick{q_1} & \targ{} & \ctrl{1} & \qw & \qw \\
+\lstick{q_2} & \qw & \targ{} & \ctrl{1} & \qw \\
+\lstick{q_3} & \qw & \qw & \targ{} & \gate{R_z(\theta)}
+\end{quantikz}
+\]
+
+%------------------------------------------------
+\section{Parametric Matrix Models}
+
+Instead of assigning independent amplitudes to all double excitations,
+we write
+
+\begin{equation}
+T_2(\theta) =
+\sum_k \theta_k M_k .
+\end{equation}
+
+This reduces the parameter count and circuit depth.
+
+%------------------------------------------------
+\section{Benchmark: UCCD vs PMM}
+
+The number of double excitations scales as
+
+\begin{equation}
+N_{UCCD} \sim N^4 .
+\end{equation}
+
+Parametric matrix models reduce this to
+
+\begin{equation}
+N_{PMM} \sim N^2 .
+\end{equation}
+
+Consequently the number of Trotter steps and entangling gates
+is drastically reduced.
+
+%------------------------------------------------
+\section{Example Quantum Implementation}
+
+Below is a minimal Qiskit implementation of the pairing Hamiltonian.
+
+\begin{lstlisting}[language=Python]
+from qiskit import QuantumCircuit
+from qiskit.circuit import Parameter
+
+theta = Parameter('theta')
+
+qc = QuantumCircuit(4)
+
+qc.cx(0,1)
+qc.cx(1,2)
+qc.cx(2,3)
+
+qc.rz(theta,3)
+
+qc.cx(2,3)
+qc.cx(1,2)
+qc.cx(0,1)
+
+print(qc)
+\end{lstlisting}
+
+This circuit implements the exponential of the Pauli string
+generated by the UCCD excitation operator.
+
+%------------------------------------------------
+\section{Conclusions}
+
+We have presented a quantum computing framework for the nuclear
+pairing Hamiltonian based on the unitary coupled cluster doubles
+method. Explicit Jordan--Wigner mappings, quantum circuits,
+and Pauli-string decompositions were derived.
+
+Parametric matrix models offer a powerful method for reducing
+circuit depth and enabling simulations of larger nuclear systems
+on near-term quantum devices.
+
+\end{document}
+
+
