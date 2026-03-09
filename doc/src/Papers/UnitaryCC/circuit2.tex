@@ -1,0 +1,457 @@
+\documentclass{beamer}
+
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{quantikz}
+
+\title{Reducing the Complexity of Unitary Coupled Cluster Circuits}
+\subtitle{Tensor Factorizations and Parametric Matrix Models}
+\author{}
+\date{}
+
+\begin{document}
+
+\frame{\titlepage}
+
+%================================================
+\begin{frame}{Outline}
+
+\begin{itemize}
+\item Complexity of the UCC ansatz
+\item Tensor structure of cluster amplitudes
+\item Scaling of UCC circuits
+\item Tensor factorization methods
+\item Parametric matrix models
+\item Circuit depth reduction
+\end{itemize}
+
+\end{frame}
+
+%================================================
+\section{Complexity of the UCC Ansatz}
+
+%------------------------------------------------
+\begin{frame}{Unitary Coupled Cluster}
+
+The UCC wavefunction is
+
+\[
+|\Psi\rangle =
+e^{T-T^\dagger}|\Phi_0\rangle
+\]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Cluster Operator}
+
+For doubles
+
+\[
+T_2 =
+\frac{1}{4}
+\sum_{abij}
+t_{ij}^{ab}
+a_a^\dagger a_b^\dagger a_j a_i
+\]
+
+\end{frame}
+
+
+%------------------------------------------------
+\begin{frame}{Generator}
+
+  Define
+
+  \[
+  \tau = T_2 - T_2^\dagger
+  \]
+
+  Thus
+
+  \[
+  U = e^\tau
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Number of Amplitudes}
+
+  For $N$ orbitals
+
+  \[
+  t_{ij}^{ab}
+  \]
+
+  contains
+
+  \[
+  N^4
+  \]
+
+  elements.
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Implication}
+
+  The number of excitation operators grows as
+
+  \[
+  N^4
+  \]
+
+  Therefore the number of circuit blocks grows rapidly.
+
+\end{frame}
+
+%================================================
+\section{Tensor Structure of Amplitudes}
+
+%------------------------------------------------
+\begin{frame}{Amplitude Tensor}
+
+  The cluster amplitudes form a rank-4 tensor
+
+  \[
+  t_{ij}^{ab}
+  \]
+
+  with indices
+
+  \[
+  i,j = \text{occupied}
+  \]
+
+  \[
+  a,b = \text{virtual}
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Symmetry}
+
+  The tensor satisfies
+
+  \[
+  t_{ij}^{ab} = -t_{ji}^{ab}
+  \]
+
+  \[
+  t_{ij}^{ab} = -t_{ij}^{ba}
+  \]
+
+  This reduces the number of independent elements.
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Remaining Complexity}
+
+  Despite antisymmetry
+
+  \[
+  N_{parameters} \sim N^4
+  \]
+
+\end{frame}
+
+%================================================
+\section{Circuit Implementation}
+
+%------------------------------------------------
+\begin{frame}{Jordan–Wigner Mapping}
+
+  Fermionic operators are mapped to qubits
+
+  \begin{align}
+    a_p^\dagger &= \frac12(X_p-iY_p)\prod_{j<p}Z_j \\
+    a_p &= \frac12(X_p+iY_p)\prod_{j<p}Z_j
+  \end{align}
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Pauli Strings}
+
+  Excitations become Pauli strings
+
+  \[
+  X_i X_j Y_k Y_l
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Circuit Block}
+
+  Each excitation corresponds to
+
+  \[
+  e^{i\theta P}
+  \]
+
+  where $P$ is a Pauli string.
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Example Circuit}
+
+  \[
+  \begin{quantikz}
+    \lstick{q_0} & \ctrl{1} & \qw & \qw & \qw \\
+    \lstick{q_1} & \targ{} & \ctrl{1} & \qw & \qw \\
+    \lstick{q_2} & \qw & \targ{} & \ctrl{1} & \qw \\
+    \lstick{q_3} & \qw & \qw & \targ{} & \gate{R_z(\theta)}
+  \end{quantikz}
+  \]
+
+\end{frame}
+
+%================================================
+\section{Tensor Factorization}
+
+%------------------------------------------------
+\begin{frame}{Low Rank Factorization}
+
+  We approximate
+
+  \[
+  t_{ij}^{ab}
+  \]
+
+  as
+
+  \[
+  t_{ij}^{ab}
+  =
+  \sum_k
+  X_{ia}^{(k)} X_{jb}^{(k)}
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Interpretation}
+
+  Instead of $N^4$ parameters we use
+
+  \[
+  kN^2
+  \]
+
+  parameters.
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Reduced Operator}
+
+  The cluster operator becomes
+
+  \[
+  T_2 =
+  \sum_k
+  \left(
+  \sum_{ia} X_{ia}^{(k)} a_a^\dagger a_i
+  \right)^2
+  \]
+
+\end{frame}
+
+%================================================
+\section{Operator Factorization}
+
+%------------------------------------------------
+\begin{frame}{Factorized Generator}
+
+  Define
+
+  \[
+  B_k =
+  \sum_{ia}
+  X_{ia}^{(k)} a_a^\dagger a_i
+  \]
+
+  Then
+
+  \[
+  T_2 =
+  \sum_k B_k^2
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Unitary Operator}
+
+  \[
+  U =
+  e^{\sum_k (B_k^2-B_k^{\dagger 2})}
+  \]
+
+\end{frame}
+
+%================================================
+\section{Parametric Matrix Models}
+
+%------------------------------------------------
+\begin{frame}{PMM Ansatz}
+
+  Parametric matrix models write
+
+  \[
+  T(\theta)=
+  \sum_k \theta_k M_k
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Reduced Generator}
+
+  \[
+  \tau =
+  \sum_k \theta_k (M_k-M_k^\dagger)
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Circuit Representation}
+
+  \[
+  U(\theta)=
+  \prod_k
+  e^{\theta_k(M_k-M_k^\dagger)}
+  \]
+
+\end{frame}
+
+%================================================
+\section{Circuit Complexity}
+
+%------------------------------------------------
+\begin{frame}{Original UCC}
+
+  Parameter count
+
+  \[
+  N^4
+  \]
+
+  Circuit depth
+
+  \[
+  D \sim \frac{N^4}{\Delta t}
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{PMM}
+
+  Parameter count
+
+  \[
+  N^2
+  \]
+
+  Circuit depth
+
+  \[
+  D \sim \frac{N^2}{\Delta t}
+  \]
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Improvement}
+
+  Reduction factor
+
+  \[
+  N^2
+  \]
+
+\end{frame}
+
+%================================================
+\section{Physical Interpretation}
+
+%------------------------------------------------
+\begin{frame}{Collective Excitations}
+
+  PMM operators correspond to
+
+  collective particle-hole excitations.
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Relation to Many-Body Theory}
+
+  The approach resembles
+
+  \begin{itemize}
+  \item random phase approximation
+  \item low-rank factorization
+  \item tensor decomposition
+  \end{itemize}
+
+\end{frame}
+
+%================================================
+\section{Summary}
+
+%------------------------------------------------
+\begin{frame}{Key Results}
+
+  UCC circuits become large because
+
+  \[
+  t_{ij}^{ab}
+  \]
+
+  contains
+
+  \[
+  N^4
+  \]
+
+  parameters.
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Solutions}
+
+  Circuit depth can be reduced using
+
+  \begin{itemize}
+  \item tensor factorization
+  \item adaptive ansätze
+  \item parametric matrix models
+  \end{itemize}
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Final Scaling}
+
+  \[
+  D_{UCC} \sim \frac{N^4}{\Delta t}
+  \]
+
+  \[
+  D_{PMM} \sim \frac{N^2}{\Delta t}
+  \]
+
+\end{frame}
+
+\end{document}
